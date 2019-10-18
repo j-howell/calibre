@@ -1,14 +1,13 @@
 #!/usr/bin/env python2
 # vim:fileencoding=UTF-8:ts=4:sw=4:sta:et:sts=4:ai
+from __future__ import absolute_import, division, print_function, unicode_literals
 
-from __future__ import print_function
 __license__   = 'GPL v3'
 __copyright__ = '2010, Kovid Goyal <kovid@kovidgoyal.net>'
 __docformat__ = 'restructuredtext en'
 
 import itertools, operator
 from functools import partial
-from polyglot.builtins import iteritems, map, unicode_type, range
 from collections import OrderedDict
 
 from PyQt5.Qt import (
@@ -31,6 +30,7 @@ from calibre.gui2.library import DEFAULT_SORT
 from calibre.constants import filesystem_encoding
 from calibre import force_unicode
 from calibre.utils.icu import primary_sort_key
+from polyglot.builtins import iteritems, map, range, unicode_type
 
 
 def restrict_column_width(self, col, old_size, new_size):
@@ -971,8 +971,10 @@ class BooksView(QTableView):  # {{{
         rmap = {i:x for i, x in enumerate(self.column_map)}
         return (rmap[h.visualIndex(x)] for x in logical_indices if h.visualIndex(x) > -1)
 
-    def refresh_book_details(self):
+    def refresh_book_details(self, force=False):
         idx = self.currentIndex()
+        if not idx.isValid() and force:
+            idx = self.model().index(0, 0)
         if idx.isValid():
             self._model.current_changed(idx, idx)
             return True
@@ -1125,7 +1127,7 @@ class BooksView(QTableView):  # {{{
         rows = {x.row() if hasattr(x, 'row') else x for x in
             identifiers}
         if using_ids:
-            rows = set([])
+            rows = set()
             identifiers = set(identifiers)
             m = self.model()
             for row in range(m.rowCount(QModelIndex())):

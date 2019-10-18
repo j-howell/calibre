@@ -399,6 +399,8 @@ class Main(MainWindow, MainWindowMixin, DeviceMixin, EmailMixin,  # {{{
         if config['autolaunch_server']:
             self.start_content_server()
 
+        if show_gui:
+            self.show()
         self.read_settings()
 
         self.finalize_layout()
@@ -418,10 +420,6 @@ class Main(MainWindow, MainWindowMixin, DeviceMixin, EmailMixin,  # {{{
 
         register_keyboard_shortcuts()
         self.keyboard.finalize()
-        if show_gui:
-            # Note this has to come after restoreGeometry() because of
-            # https://bugreports.qt.io/browse/QTBUG-56831
-            self.show()
         if self.system_tray_icon is not None and self.system_tray_icon.isVisible() and opts.start_in_tray:
             self.hide_windows()
         self.auto_adder = AutoAdder(gprefs['auto_add_path'], self)
@@ -666,8 +664,25 @@ class Main(MainWindow, MainWindowMixin, DeviceMixin, EmailMixin,  # {{{
             except Exception:
                 import traceback
                 traceback.print_exc()
+        elif msg.startswith('web-store:'):
+            import json
+            try:
+                data = json.loads(msg[len('web-store:'):])
+            except ValueError:
+                prints('Failed to decode message from other instance: %r' % msg)
+            path = data['path']
+            if data['tags']:
+                before = self.current_db.new_api.all_book_ids()
+            self.iactions['Add Books'].add_filesystem_book([path], allow_device=False)
+            if data['tags']:
+                db = self.current_db.new_api
+                after = self.current_db.new_api.all_book_ids()
+                for book_id in after - before:
+                    tags = list(db.field_for('tags', book_id))
+                    tags += list(data['tags'])
+                    self.current_db.new_api.set_field('tags', {book_id: tags})
         else:
-            print(msg)
+            prints('Ignoring unknown message from other instance: %r' % msg[:20])
 
     def current_view(self):
         '''Convenience method that returns the currently visible view '''

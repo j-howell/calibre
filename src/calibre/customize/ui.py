@@ -10,7 +10,7 @@ from calibre.customize import (CatalogPlugin, FileTypePlugin, PluginNotFound,
                               MetadataReaderPlugin, MetadataWriterPlugin,
                               InterfaceActionBase as InterfaceAction,
                               PreferencesPlugin, platform, InvalidPlugin,
-                              StoreBase as Store, ViewerPlugin, EditBookToolPlugin,
+                              StoreBase as Store, EditBookToolPlugin,
                               LibraryClosedPlugin)
 from calibre.customize.conversion import InputFormatPlugin, OutputFormatPlugin
 from calibre.customize.zipplugin import loader
@@ -37,8 +37,8 @@ def _config():
     c.add_opt('plugins', default={}, help=_('Installed plugins'))
     c.add_opt('filetype_mapping', default={}, help=_('Mapping for filetype plugins'))
     c.add_opt('plugin_customization', default={}, help=_('Local plugin customization'))
-    c.add_opt('disabled_plugins', default=set([]), help=_('Disabled plugins'))
-    c.add_opt('enabled_plugins', default=set([]), help=_('Enabled plugins'))
+    c.add_opt('disabled_plugins', default=set(), help=_('Disabled plugins'))
+    c.add_opt('enabled_plugins', default=set(), help=_('Enabled plugins'))
 
     return ConfigProxy(c)
 
@@ -307,14 +307,14 @@ def available_store_plugins():
 
 
 def stores():
-    stores = set([])
+    stores = set()
     for plugin in store_plugins():
         stores.add(plugin.name)
     return stores
 
 
 def available_stores():
-    stores = set([])
+    stores = set()
     for plugin in available_store_plugins():
         stores.add(plugin.name)
     return stores
@@ -575,7 +575,7 @@ def catalog_plugins():
 
 
 def available_catalog_formats():
-    formats = set([])
+    formats = set()
     for plugin in catalog_plugins():
         if not is_disabled(plugin):
             for format in plugin.file_types:
@@ -642,15 +642,6 @@ def patch_metadata_plugins(possibly_updated_plugins):
                     patches[i].initialize()
     for i, pup in iteritems(patches):
         _initialized_plugins[i] = pup
-# }}}
-
-# Viewer plugins {{{
-
-
-def all_viewer_plugins():
-    for plugin in _initialized_plugins:
-        if isinstance(plugin, ViewerPlugin):
-            yield plugin
 # }}}
 
 # Editor plugins {{{

@@ -14,7 +14,6 @@ import time
 import unicodedata
 import uuid
 from collections import defaultdict
-from polyglot.builtins import iteritems, unicode_type, zip, map
 from io import BytesIO
 from itertools import count
 
@@ -54,6 +53,7 @@ from calibre.utils.filenames import hardlink_file, nlinks_file
 from calibre.utils.ipc.simple_worker import WorkerError, fork_job
 from calibre.utils.logging import default_log
 from calibre.utils.zipfile import ZipFile
+from polyglot.builtins import iteritems, map, unicode_type, zip
 from polyglot.urllib import urlparse
 
 exists, join, relpath = os.path.exists, os.path.join, os.path.relpath
@@ -439,13 +439,17 @@ class Container(ContainerBase):  # {{{
         using the :class:`LinkReplacer` and :class:`LinkRebaser` classes. '''
         media_type = self.mime_map.get(name, guess_type(name))
         if name == self.opf_name:
+            replace_func.file_type = 'opf'
             for elem in self.opf_xpath('//*[@href]'):
                 elem.set('href', replace_func(elem.get('href')))
         elif media_type.lower() in OEB_DOCS:
+            replace_func.file_type = 'text'
             rewrite_links(self.parsed(name), replace_func)
         elif media_type.lower() in OEB_STYLES:
+            replace_func.file_type = 'style'
             replaceUrls(self.parsed(name), replace_func)
         elif media_type.lower() == guess_type('toc.ncx'):
+            replace_func.file_type = 'ncx'
             for elem in self.parsed(name).xpath('//*[@src]'):
                 elem.set('src', replace_func(elem.get('src')))
 
@@ -672,7 +676,7 @@ class Container(ContainerBase):  # {{{
         ''' The names of all manifest items whose media-type matches predicate.
         `predicate` can be a set, a list, a string or a function taking a single
         argument, which will be called with the media-type. '''
-        if isinstance(predicate, type('')):
+        if isinstance(predicate, unicode_type):
             predicate = predicate.__eq__
         elif hasattr(predicate, '__contains__'):
             predicate = predicate.__contains__
@@ -1277,7 +1281,7 @@ class EpubContainer(Container):
                     break
         if raw_unique_identifier is not None:
             idpf_key = raw_unique_identifier
-            idpf_key = re.sub(u'[\u0020\u0009\u000d\u000a]', u'', idpf_key)
+            idpf_key = re.sub('[\u0020\u0009\u000d\u000a]', '', idpf_key)
             idpf_key = hashlib.sha1(idpf_key.encode('utf-8')).digest()
         key = None
         for item in self.opf_xpath('//*[local-name()="metadata"]/*'
