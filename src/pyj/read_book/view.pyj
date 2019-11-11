@@ -162,12 +162,12 @@ class View:
         left_margin = E.div(
             svgicon('caret-left'), style='width:{}px;'.format(sd.get('margin_left', 20)),
             class_='book-side-margin', id='book-left-margin', onclick=self.left_margin_clicked,
-            oncontextmenu=self.margin_context_menu.bind(None, 'left'))
+            oncontextmenu=self.margin_context_menu.bind(None, 'left'), onwheel=self.on_margin_wheel.bind(None, 'left'))
         set_left_margin_handler(left_margin)
         right_margin = E.div(
             svgicon('caret-right'), style='width:{}px;'.format(sd.get('margin_right', 20)),
             class_='book-side-margin', id='book-right-margin', onclick=self.right_margin_clicked,
-            oncontextmenu=self.margin_context_menu.bind(None, 'right'))
+            oncontextmenu=self.margin_context_menu.bind(None, 'right'), onwheel=self.on_margin_wheel.bind(None, 'right'))
         set_right_margin_handler(right_margin)
         iframe_id = unique_id('read-book-iframe')
         sandbox = 'allow-popups allow-scripts allow-popups-to-escape-sandbox'
@@ -187,7 +187,7 @@ class View:
                         self.book_scrollbar.create(),
                         E.div(style='position: absolute; top:0; left:0; width: 100%; pointer-events:none; display:none', id='book-search-overlay'),  # search overlay
                         E.div(style='position: absolute; top:0; left:0; width: 100%; height: 100%; display:none', id='book-content-popup-overlay'),  # content popup overlay
-                        E.div(style='position: absolute; top:0; left:0; width: 100%; height: 100%; display:none', id='book-overlay'),  # main overlay
+                        E.div(style='position: absolute; top:0; left:0; width: 100%; height: 100%; overflow: auto; display:none', id='book-overlay'),  # main overlay
                         E.div(style='position: absolute; top:0; left:0; width: 100%; height: 100%; display:none', id='controls-help-overlay'),  # controls help overlay
                     )
                 )
@@ -279,6 +279,13 @@ class View:
         event.preventDefault(), event.stopPropagation()
         self.show_chrome()
 
+    def on_margin_wheel(self, which, event):
+        event.preventDefault()
+        evt = {}
+        for attr in ('deltaX', 'deltaY', 'deltaMode', 'altKey', 'ctrlKey', 'shiftKey', 'metaKey'):
+            evt[attr] = event[attr]
+        self.iframe_wrapper.send_message('wheel_from_margin', evt=evt)
+
     def forward_gesture(self, gesture):
         self.iframe_wrapper.send_message('gesture_from_margin', gesture=gesture)
 
@@ -339,8 +346,12 @@ class View:
             ui_operations.toggle_inspector()
         elif data.name is 'toggle_lookup':
             ui_operations.toggle_lookup()
+        elif data.name is 'toggle_full_screen':
+            ui_operations.toggle_full_screen()
         elif data.name is 'toggle_paged_mode':
             self.toggle_paged_mode()
+        elif data.name is 'toggle_toolbar':
+            self.toggle_toolbar()
         elif data.name is 'quit':
             ui_operations.quit()
         elif data.name is 'start_search':
@@ -365,6 +376,23 @@ class View:
             self.on_next_section({'forward': True})
         elif data.name is 'previous_section':
             self.on_next_section({'forward': False})
+        elif data.name is 'open_book':
+            self.overlay.open_book()
+        elif data.name is 'next':
+            self.iframe_wrapper.send_message(
+                'next_screen', backwards=False, all_pages_on_screen=get_session_data().get('paged_margin_clicks_scroll_by_screen'))
+        elif data.name is 'previous':
+            self.iframe_wrapper.send_message(
+                'next_screen', backwards=True, all_pages_on_screen=get_session_data().get('paged_margin_clicks_scroll_by_screen'))
+        elif data.name is 'print':
+            ui_operations.print_book()
+        elif data.name is 'preferences':
+            self.overlay.show_prefs()
+        elif data.name is 'metadata':
+            self.overlay.show_metadata()
+        elif data.name is 'goto_location':
+            self.overlay.show_ask_for_location()
+
 
     def on_selection_change(self, data):
         self.currently_showing.selected_text = data.text
@@ -377,6 +405,12 @@ class View:
         new_mode = 'flow' if mode is 'paged' else 'paged'
         sd.set('read_mode', new_mode)
         ui_operations.redisplay_book()
+
+    def toggle_toolbar(self):
+        sd = get_session_data()
+        misc = sd.get('standalone_misc_settings')
+        misc.show_actions_toolbar = v'!misc.show_actions_toolbar'
+        sd.set('standalone_misc_settings', misc)
 
     def find(self, text, backwards):
         self.iframe_wrapper.send_message('find', text=text, backwards=backwards, searched_in_spine=False)
@@ -473,8 +507,9 @@ class View:
             if which is 'left':
                 # Explicitly set the width of the central panel. This is needed
                 # on small screens with chrome, without it sometimes the right
-                # margin goes off the screen.
-                m.nextSibling.style.maxWidth = 'calc(100vw - {}px)'.format(margin_left + margin_right)
+                # margin/scrollbar goes off the screen.
+                m.nextSibling.style.maxWidth = 'calc(100vw - {}px)'.format(
+                    margin_left + margin_right + self.book_scrollbar.effective_width)
             set_css(m, width=val + 'px')
             val = min(val, 25)
             m.firstChild.style.width = val + 'px'
@@ -567,10 +602,11 @@ class View:
                 cfi =  '/' + rest
         return name, cfi
 
-    def display_book(self, book, initial_cfi, initial_toc_node):
+    def display_book(self, book, initial_cfi, initial_toc_node, initial_bookpos):
         self.hide_overlays()
         self.iframe.focus()
         is_current_book = self.book and self.book.key == book.key
+        self.book_load_started = True
         if not is_current_book:
             self.iframe_wrapper.reset()
             self.content_popup_overlay.iframe_wrapper.reset()
@@ -601,6 +637,9 @@ class View:
         navigated = False
         if jstype(initial_toc_node) is 'number':
             navigated = self.goto_toc_node(initial_toc_node)
+        if not navigated and jstype(initial_bookpos) is 'number':
+            navigated = True
+            self.goto_book_position(initial_bookpos)
         if not navigated:
             self.show_name(name, initial_position=pos)
         sd = get_session_data()
@@ -694,14 +733,18 @@ class View:
         else:
             self.show_name(chapter_name, initial_position={'type':'frac', 'frac':chapter_frac, 'replace_history':True})
 
+    def goto_book_position(self, bpos):
+        val = max(0, min(1000 * float(bpos) / self.current_position_data.book_length, 1))
+        return self.goto_frac(val)
+
     def on_scroll_to_anchor(self, data):
         self.show_name(data.name, initial_position={'type':'anchor', 'anchor':data.frag, 'replace_history':False})
 
-    def goto_bookpos(self, bookpos):
+    def goto_cfi(self, bookpos):
         cfiname, internal_cfi = self.parse_cfi(bookpos, self.book)
         if cfiname and internal_cfi:
             # replace_history has to be true here otherwise forward does not
-            # work after back, as back uses goto_bookpos
+            # work after back, as back uses goto_cfi
             pos = {'replace_history': True}
             name = cfiname
             pos.type, pos.cfi = 'cfi', internal_cfi
@@ -842,18 +885,10 @@ class View:
             nonlocal has_clock
             if sd.get(sz_attr, 20) > 5:
                 mi = self.book.metadata
-                texta, hca = render_head_foot(div.firstChild, name, 'left', mi, self.current_toc_node, self.current_toc_toplevel_node, book_time, chapter_time, pos)
-                textb, hcb = render_head_foot(div.firstChild.nextSibling, name, 'middle', mi, self.current_toc_node, self.current_toc_toplevel_node, book_time, chapter_time, pos)
-                textc, hcc = render_head_foot(div.lastChild, name, 'right', mi, self.current_toc_node, self.current_toc_toplevel_node, book_time, chapter_time, pos)
+                hca = render_head_foot(div.firstChild, name, 'left', mi, self.current_toc_node, self.current_toc_toplevel_node, book_time, chapter_time, pos)
+                hcb = render_head_foot(div.firstChild.nextSibling, name, 'middle', mi, self.current_toc_node, self.current_toc_toplevel_node, book_time, chapter_time, pos)
+                hcc = render_head_foot(div.lastChild, name, 'right', mi, self.current_toc_node, self.current_toc_toplevel_node, book_time, chapter_time, pos)
                 has_clock = hca or hcb or hcc
-                if textc and not textb and not texta:
-                    # Want right-aligned
-                    div.firstChild.style.display = 'block'
-                    div.firstChild.nextSibling.style.display = 'block'
-                elif not texta and not textc and textb:
-                    # Want centered
-                    div.firstChild.style.display = 'block'
-                    div.lastChild.style.display = 'block'
             else:
                 for c in div.childNodes:
                     c.style.display = 'none'
@@ -905,6 +940,10 @@ class View:
         self.set_progress_frac(data.progress_frac, data.file_progress_frac)
         self.update_header_footer()
         window.scrollTo(0, 0)  # ensure window is at 0 on mobile where the navbar causes issues
+        if self.book_load_started:
+            self.book_load_started = False
+            if ui_operations.clear_history:
+                ui_operations.clear_history()
 
     def set_progress_frac(self, progress_frac, file_progress_frac):
         self.current_progress_frac = progress_frac or 0
