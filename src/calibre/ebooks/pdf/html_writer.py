@@ -60,6 +60,13 @@ def data_as_pdf_doc(data):
     return ans
 
 
+def preprint_js():
+    ans = getattr(preprint_js, 'ans', None)
+    if ans is None:
+        ans = preprint_js.ans = P('pdf-preprint.js', data=True).decode('utf-8')
+    return ans
+
+
 def last_tag(root):
     return tuple(root.iterchildren('*'))[-1]
 
@@ -196,6 +203,9 @@ class Renderer(QWebEnginePage):
             pass
 
     def print_to_pdf(self):
+        self.runJavaScript(preprint_js(), self.start_print)
+
+    def start_print(self, *a):
         self.printToPdf(self.printing_done, self.page_layout)
 
     def printing_done(self, pdf_data):
@@ -1202,6 +1212,16 @@ def convert(opf_path, opts, metadata=None, output_path=None, log=default_log, co
     num_removed = pdf_doc.dedup_images()
     if num_removed:
         log('Removed', num_removed, 'duplicate images')
+
+    if opts.pdf_odd_even_offset:
+        for i in range(1, pdf_doc.page_count()):
+            margins = page_margins_map[i]
+            mult = -1 if i % 2 else 1
+            val = opts.pdf_odd_even_offset
+            if abs(val) < min(margins.left, margins.right):
+                box = list(pdf_doc.get_page_box("CropBox", i))
+                box[0] += val * mult
+                pdf_doc.set_page_box("CropBox", i, *box)
 
     if cover_data:
         add_cover(pdf_doc, cover_data, page_layout, opts)
