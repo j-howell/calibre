@@ -210,7 +210,7 @@ class Path(QWidget):
         ans = choose_files(self, 'choose_path_srv_opts_' + self.dname, _('Choose a file'), select_only_single_file=True)
         if ans:
             self.set(ans[0])
-            self.save_history()
+            self.text.save_history()
 
 
 class Choices(QComboBox):
@@ -722,10 +722,7 @@ class User(QWidget):
         l.setFieldGrowthPolicy(QFormLayout.AllNonFixedFieldsGrow)
         self.username_label = la = QLabel('')
         l.addWidget(la)
-        self.cpb = b = QPushButton(_('Change &password'))
-        l.addWidget(b)
-        b.clicked.connect(self.change_password)
-        self.ro_text = _('Allow {} to make &changes (i.e. grant write access)?')
+        self.ro_text = _('Allow {} to make &changes (i.e. grant write access)')
         self.rw = rw = QCheckBox(self)
         rw.setToolTip(
             _(
@@ -737,6 +734,9 @@ class User(QWidget):
         l.addWidget(rw)
         self.access_label = la = QLabel(self)
         l.addWidget(la), la.setWordWrap(True)
+        self.cpb = b = QPushButton(_('Change &password'))
+        l.addWidget(b)
+        b.clicked.connect(self.change_password)
         self.restrict_button = b = QPushButton(self)
         b.clicked.connect(self.change_restriction)
         l.addWidget(b)

@@ -25,6 +25,7 @@ from calibre.ebooks.chardet import xml_to_unicode
 from calibre.gui2 import NO_URL_FORMATTING, choose_files, error_dialog, gprefs
 from calibre.gui2.book_details import css
 from calibre.gui2.widgets import LineEditECM
+from calibre.gui2.widgets2 import to_plain_text
 from calibre.utils.config import tweaks
 from calibre.utils.imghdr import what
 from polyglot.builtins import filter, iteritems, itervalues, unicode_type
@@ -77,6 +78,7 @@ def lift_styles(tag, style_map):
 
 def filter_qt_styles(style):
     for k in tuple(style):
+        # -qt-paragraph-type is a hack used by Qt for empty paragraphs
         if k.startswith('-qt-'):
             del style[k]
 
@@ -191,6 +193,9 @@ def cleanup_qt_markup(root):
             use_implicit_styling_for_a(child, style_map)
         for child in tag.iterdescendants('span'):
             use_implicit_styling_for_span(child, style_map[child])
+        if tag.tag == 'p' and style_map[tag].get('-qt-paragraph-type') == 'empty':
+            del tag[:]
+            tag.text = '\xa0'
     for style in itervalues(style_map):
         filter_qt_styles(style)
     for tag, style in iteritems(style_map):
@@ -1134,7 +1139,7 @@ class Editor(QWidget):  # {{{
                 self.wyswyg_dirty = False
         elif index == 0:  # changing to wyswyg
             if self.source_dirty:
-                self.editor.html = unicode_type(self.code_edit.toPlainText())
+                self.editor.html = to_plain_text(self.code_edit)
                 self.source_dirty = False
 
     @property
@@ -1193,6 +1198,6 @@ if __name__ == '__main__':
     w.html = '''<h1>Test Heading</h1><blockquote>Test blockquote</blockquote><p><span style="background-color: rgb(0, 255, 255); ">He hadn't
     set <u>out</u> to have an <em>affair</em>, <span style="font-style:italic; background-color:red">
     much</span> less a <s>long-term</s>, <b>devoted</b> one.</span><p>hello'''
-    w.html = '<div><p id="moo">Testing <em>a</em> link.</p></div>'
+    w.html = '<div><p id="moo">Testing <em>a</em> link.</p><p>\xa0</p><p>ss</p></div>'
     app.exec_()
     # print w.html

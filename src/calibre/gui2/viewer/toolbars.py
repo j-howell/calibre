@@ -40,6 +40,7 @@ class Actions(object):
 def all_actions():
     if not hasattr(all_actions, 'ans'):
         all_actions.ans = Actions({
+            'color_scheme': Action('format-fill-color.png', _('Switch color scheme')),
             'back': Action('back.png', _('Back')),
             'forward': Action('forward.png', _('Forward')),
             'open': Action('document_open.png', _('Open e-book')),
@@ -52,6 +53,7 @@ def all_actions():
             'next_section': Action('arrow-down.png', _('Next section'), 'next_section'),
             'previous_section': Action('arrow-up.png', _('Previous section'), 'previous_section'),
             'toc': Action('toc.png', _('Table of Contents'), 'toggle_toc'),
+            'search': Action('search.png', _('Search'), 'toggle_search'),
             'bookmarks': Action('bookmarks.png', _('Bookmarks'), 'toggle_bookmarks'),
             'inspector': Action('debug.png', _('Inspector'), 'toggle_inspector'),
             'reference': Action('reference.png', _('Toggle Reference mode'), 'toggle_reference_mode'),
@@ -67,8 +69,8 @@ def all_actions():
 
 
 DEFAULT_ACTIONS = (
-        'back', 'forward', None, 'open', 'copy', 'increase_font_size', 'decrease_font_size', 'fullscreen',
-        None, 'previous', 'next', None, 'toc', 'bookmarks', 'lookup', 'reference', 'chrome', None, 'mode', 'print', 'preferences',
+        'back', 'forward', None, 'open', 'copy', 'increase_font_size', 'decrease_font_size', 'fullscreen', 'color_scheme',
+        None, 'previous', 'next', None, 'toc', 'search', 'bookmarks', 'lookup', 'reference', 'chrome', None, 'mode', 'print', 'preferences',
         'metadata', 'inspector'
 )
 
@@ -120,7 +122,7 @@ class ActionsToolBar(ToolBar):
     def hide_toolbar(self):
         self.web_view.trigger_shortcut('toggle_toolbar')
 
-    def initialize(self, web_view):
+    def initialize(self, web_view, toggle_search_action):
         self.web_view = web_view
         shortcut_action = self.create_shortcut_action
         aa = all_actions()
@@ -131,6 +133,7 @@ class ActionsToolBar(ToolBar):
         web_view.standalone_misc_settings_changed.connect(self.update_visibility)
         web_view.autoscroll_state_changed.connect(self.update_autoscroll_action)
         web_view.customize_toolbar.connect(self.customize, type=Qt.QueuedConnection)
+        web_view.view_created.connect(self.on_view_created)
 
         self.back_action = page.action(QWebEnginePage.Back)
         self.back_action.setIcon(aa.back.icon)
@@ -155,6 +158,8 @@ class ActionsToolBar(ToolBar):
         self.next_section_action = shortcut_action('next_section')
         self.previous_section_action = shortcut_action('previous_section')
 
+        self.search_action = a = toggle_search_action
+        a.setText(aa.search.text), a.setIcon(aa.search.icon)
         self.toc_action = a = shortcut_action('toc')
         a.setCheckable(True)
         self.bookmarks_action = a = shortcut_action('bookmarks')
@@ -176,6 +181,11 @@ class ActionsToolBar(ToolBar):
         self.preferences_action = shortcut_action('preferences')
         self.metadata_action = shortcut_action('metadata')
         self.update_mode_action()
+        self.color_scheme_action = a = QAction(aa.color_scheme.icon, aa.color_scheme.text, self)
+        self.color_scheme_menu = m = QMenu(self)
+        a.setMenu(m)
+        m.aboutToShow.connect(self.populate_color_scheme_menu)
+
         self.add_actions()
 
     def add_actions(self):
@@ -189,6 +199,9 @@ class ActionsToolBar(ToolBar):
                     self.addAction(getattr(self, '{}_action'.format(x)))
                 except AttributeError:
                     pass
+        w = self.widgetForAction(self.color_scheme_action)
+        if w:
+            w.setPopupMode(w.InstantPopup)
 
     def update_mode_action(self):
         mode = get_session_pref('read_mode', default='paged', group=None)
@@ -243,6 +256,33 @@ class ActionsToolBar(ToolBar):
                     elided_text(entry['title'], pos='right', width=250),
                     elided_text(os.path.basename(path), width=250))).triggered.connect(partial(
                     self.open_book_at_path.emit, path))
+
+    def on_view_created(self, data):
+        self.default_color_schemes = data['default_color_schemes']
+
+    def populate_color_scheme_menu(self):
+        m = self.color_scheme_menu
+        m.clear()
+        ccs = get_session_pref('current_color_scheme', group=None) or ''
+        ucs = get_session_pref('user_color_schemes', group=None) or {}
+
+        def add_action(key, defns):
+            a = m.addAction(defns[key]['name'])
+            a.setCheckable(True)
+            a.setObjectName('color-switch-action:{}'.format(key))
+            a.triggered.connect(self.color_switch_triggerred)
+            if key == ccs:
+                a.setChecked(True)
+
+        for key in sorted(ucs, key=lambda x: primary_sort_key(ucs[x]['name'])):
+            add_action(key, ucs)
+        m.addSeparator()
+        for key in sorted(self.default_color_schemes, key=lambda x: primary_sort_key(self.default_color_schemes[x]['name'])):
+            add_action(key, self.default_color_schemes)
+
+    def color_switch_triggerred(self):
+        key = self.sender().objectName().partition(':')[-1]
+        self.action_triggered.emit('switch_color_scheme:' + key)
 
     def update_visibility(self):
         self.setVisible(bool(get_session_pref('show_actions_toolbar', default=False)))
