@@ -247,7 +247,7 @@ class MainOverlay:  # {{{
         sync_action = ac(_('Sync'), _('Get last read position and annotations from the server'), self.overlay.sync_book, 'cloud-download')
         delete_action = ac(_('Delete'), _('Delete this book from the device'), self.overlay.delete_book, 'trash')
         reload_action = ac(_('Reload'), _('Reload this book from the {}').format( _('computer') if runtime.is_standalone_viewer else _('server')), self.overlay.reload_book, 'refresh')
-        home_action = ac(_('Home'), _('Return to list of books'), def(): home();, 'home')
+        home_action = ac(_('Home'), _('Return to the home page'), def(): home();, 'home')
         back_action = ac(_('Back'), None, self.back, 'arrow-left')
         forward_action = ac(_('Forward'), None, self.forward, 'arrow-right')
         if runtime.is_standalone_viewer:
@@ -281,7 +281,7 @@ class MainOverlay:  # {{{
 
             E.ul(
                 ac(_('Font size'), _('Change text size'), self.overlay.show_font_size_chooser, 'Aa', True),
-                ac(_('Preferences'), _('Configure the book reader'), self.overlay.show_prefs, 'cogs'),
+                ac(_('Preferences'), _('Configure the book viewer'), self.overlay.show_prefs, 'cogs'),
             ),
 
             class_=MAIN_OVERLAY_ACTIONS_CLASS
@@ -339,7 +339,9 @@ class MainOverlay:  # {{{
                 ac(_('Inspector'), _('Show the content inspector'),
                    def(): self.overlay.hide(), ui_operations.toggle_inspector();, 'bug'),
                 ac(_('Reset interface'), _('Reset viewer panels, toolbars and scrollbars to defaults'),
-                   def(): self.overlay.hide(), ui_operations.reset_interface();, 'remove'),
+                   def(): self.overlay.hide(), ui_operations.reset_interface();, 'window-restore'),
+                ac(_('Quit'), _('Close the viewer'),
+                   def(): self.overlay.hide(), ui_operations.quit();, 'remove'),
             ))
         container.appendChild(set_css(E.div(class_=MAIN_OVERLAY_TS_CLASS,  # top section
             onclick=def (evt):evt.stopPropagation();,

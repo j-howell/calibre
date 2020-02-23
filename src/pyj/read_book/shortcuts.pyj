@@ -228,10 +228,22 @@ def shortcuts_definition():
         _('Toggle between Paged mode and Flow mode for text layout')
     ),
 
+    'toggle_scrollbar': desc(
+        'Ctrl+w',
+        'ui',
+        _('Toggle the scrollbar')
+    ),
+
     'toggle_reference_mode': desc(
         'Ctrl+x',
         'ui',
         _('Toggle the Reference mode')
+    ),
+
+    'metadata': desc(
+        'Ctrl+n',
+        'ui',
+        _('Show the book metadata')
     ),
 
     'reload_book': desc(
