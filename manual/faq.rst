@@ -390,6 +390,12 @@ utility, etc.
     might get a popup on the device every time calibre or the operating system
     actually tries to connect to it, asking for permission, tap OK.
 
+
+.. note:: With the Kindle Fire 8 or newer there is an icon that shows up when
+   the USB cable is plugged in, showing that the device is charging. Tap that
+   and switch the device to data transfer mode, and then start calibre, it
+   should then be detected.
+
 Over the air
 ^^^^^^^^^^^^^^
 
@@ -463,7 +469,7 @@ programs block calibre from opening a connection to send email. Try adding an ex
 antivirus program.
 
 .. note::
-    Microsoft/Google/Gmx can disable your account if you use it to send large
+    Microsoft/Google/GMX can disable your account if you use it to send large
     amounts of email. So, when using these services to send mail calibre automatically
     restricts itself to sending one book every five minutes. If you don't mind
     risking your account being blocked you can reduce this wait interval by going
