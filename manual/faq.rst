@@ -465,9 +465,6 @@ problem for *some* calibre users.
 
   * Connect the Kobo directly to your computer, not via USB Hub
   * Try a different USB cable and a different USB port on your computer
-  * Try a different computer, in particular the Kobo does not work well with
-    some Windows XP machines. If you are on Windows XP, try a computer with a
-    newer version of Windows.
   * Log out of the Kobo and log in again, this causes it to rebuild the
     database, fixing corrupted database errors.
   * Try upgrading the firmware on your Kobo Touch to the latest
@@ -494,6 +491,11 @@ Note that this workaround only works for books sent with calibre 4.17 or later.
 Alternately, simply keep your Kindle in airplane mode, you don't really want
 Amazon knowing every book you read anyway. I encourage you to contact Amazon
 customer support and complain loudly about this bug. Maybe Amazon will listen.
+
+.. note::
+
+   If the workaround is not working for you make sure you Kindle firmware
+   is at least version 5.12.5, released in April 2020.
 
 
 I transferred some books to my Kindle using calibre and they did not show up?
