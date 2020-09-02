@@ -1,6 +1,6 @@
-#!/usr/bin/env python2
+#!/usr/bin/env python
 # vim:fileencoding=UTF-8:ts=4:sw=4:sta:et:sts=4:ai
-from __future__ import absolute_import, division, print_function, unicode_literals
+
 
 __license__   = 'GPL v3'
 __copyright__ = '2011, Kovid Goyal <kovid@kovidgoyal.net>'
@@ -495,7 +495,7 @@ class TagBrowserBar(QWidget):  # {{{
         ac = QAction(parent)
         parent.addAction(ac)
         parent.keyboard.register_shortcut('tag browser find button',
-                _('Find in Tag browser'), default_keys=(),
+                _('Find in the Tag browser'), default_keys=(),
                 action=ac, group=_('Tag browser'))
         ac.triggered.connect(self.search_button.click)
 

@@ -1,9 +1,9 @@
-#!/usr/bin/env python2
+#!/usr/bin/env python
 # vim:fileencoding=utf-8
 # License: GPL v3 Copyright: 2018, Kovid Goyal <kovid at kovidgoyal.net>
 
-from __future__ import absolute_import, division, print_function, unicode_literals
 
+import json
 import os
 import sys
 from threading import Thread
@@ -15,7 +15,7 @@ from calibre import as_unicode, prints
 from calibre.constants import FAKE_PROTOCOL, VIEWER_APP_UID, islinux, iswindows
 from calibre.gui2 import Application, error_dialog, setup_gui_option_parser
 from calibre.gui2.viewer.ui import EbookViewer, is_float
-from calibre.gui2.viewer.web_view import get_session_pref, vprefs
+from calibre.gui2.viewer.config import get_session_pref, vprefs
 from calibre.ptempfile import reset_base_dir
 from calibre.utils.config import JSONConfig
 from calibre.utils.ipc import RC, viewer_socket_address
@@ -196,6 +196,23 @@ def main(args=sys.argv):
     scheme.setFlags(QWebEngineUrlScheme.SecureScheme)
     QWebEngineUrlScheme.registerScheme(scheme)
     override = 'calibre-ebook-viewer' if islinux else None
+    processed_args = []
+    internal_book_data = internal_book_data_path = None
+    for arg in args:
+        if arg.startswith('--internal-book-data='):
+            internal_book_data_path = arg.split('=', 1)[1]
+            continue
+        processed_args.append(arg)
+    if internal_book_data_path:
+        try:
+            with lopen(internal_book_data_path, 'rb') as f:
+                internal_book_data = json.load(f)
+        finally:
+            try:
+                os.remove(internal_book_data_path)
+            except EnvironmentError:
+                pass
+    args = processed_args
     app = Application(args, override_program_name=override, windows_app_uid=VIEWER_APP_UID)
 
     parser = option_parser()
@@ -220,7 +237,9 @@ def main(args=sys.argv):
     app.load_builtin_fonts()
     app.setWindowIcon(QIcon(I('viewer.png')))
     migrate_previous_viewer_prefs()
-    main = EbookViewer(open_at=opts.open_at, continue_reading=opts.continue_reading, force_reload=opts.force_reload)
+    main = EbookViewer(
+        open_at=opts.open_at, continue_reading=opts.continue_reading, force_reload=opts.force_reload,
+        calibre_book_data=internal_book_data)
     main.set_exception_handler()
     if len(args) > 1:
         acc.events.append(os.path.abspath(args[-1]))

@@ -1,4 +1,4 @@
-from __future__ import absolute_import, division, print_function, unicode_literals
+
 
 __license__   = 'GPL v3'
 __copyright__ = '2008, Kovid Goyal <kovid at kovidgoyal.net>'
@@ -192,6 +192,10 @@ def create_defs():
     defs['wrap_toolbar_text'] = False
     defs['dnd_merge'] = True
     defs['booklist_grid'] = False
+    defs['browse_annots_restrict_to_user'] = None
+    defs['browse_annots_restrict_to_type'] = None
+    defs['browse_annots_use_stemmer'] = True
+    defs['annots_export_format'] = 'txt'
 
 
 create_defs()
@@ -1016,7 +1020,7 @@ class Application(QApplication):
         try:
             if self.clipboard().ownsClipboard():
                 import ctypes
-                ctypes.WinDLL(b'ole32.dll').OleFlushClipboard()
+                ctypes.WinDLL('ole32.dll').OleFlushClipboard()
         except Exception:
             import traceback
             traceback.print_exc()
@@ -1056,7 +1060,6 @@ class Application(QApplication):
             prints('Using calibre Qt style:', self.using_calibre_style)
         if self.using_calibre_style:
             self.load_calibre_style()
-            self.setStyleSheet('QTabBar::tab:selected { font-style: italic }')
         self.paletteChanged.connect(self.on_palette_change)
         self.on_palette_change()
 
@@ -1091,6 +1094,11 @@ class Application(QApplication):
         self.setProperty('is_dark_theme', self.is_dark_theme)
         if isosx and self.is_dark_theme:
             self.fix_dark_theme_colors()
+        if self.using_calibre_style:
+            ss = 'QTabBar::tab:selected { font-style: italic }\n\n'
+            if self.is_dark_theme:
+                ss += 'QMenu { border: 1px solid palette(shadow); }'
+            self.setStyleSheet(ss)
         self.palette_changed.emit()
 
     def stylesheet_for_line_edit(self, is_error=False):
@@ -1471,12 +1479,13 @@ empty_index = empty_model.index(0)
 def set_app_uid(val):
     import ctypes
     from ctypes import wintypes
+    from ctypes import HRESULT
     try:
         AppUserModelID = ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID
     except Exception:  # Vista has no app uids
         return False
     AppUserModelID.argtypes = [wintypes.LPCWSTR]
-    AppUserModelID.restype = wintypes.HRESULT
+    AppUserModelID.restype = HRESULT
     try:
         AppUserModelID(unicode_type(val))
     except Exception as err:

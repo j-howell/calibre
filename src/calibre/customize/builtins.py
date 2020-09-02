@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-from __future__ import absolute_import, division, print_function, unicode_literals
+
 
 __license__   = 'GPL v3'
 __copyright__ = '2008, Kovid Goyal <kovid at kovidgoyal.net>'
@@ -871,6 +871,12 @@ class ActionPolish(InterfaceActionBase):
     description = _('Fine tune your e-books')
 
 
+class ActionBrowseAnnotations(InterfaceActionBase):
+    name = 'Browse Annotations'
+    actual_plugin = 'calibre.gui2.actions.browse_annots:BrowseAnnotationsAction'
+    description = _('Browse highlights and bookmarks from all books in the library')
+
+
 class ActionEditToC(InterfaceActionBase):
     name = 'Edit ToC'
     actual_plugin = 'calibre.gui2.actions.toc_edit:ToCEditAction'
@@ -1095,7 +1101,7 @@ plugins += [ActionAdd, ActionFetchAnnotations, ActionGenerateCatalog,
         ActionCopyToLibrary, ActionTweakEpub, ActionUnpackBook, ActionNextMatch, ActionStore,
         ActionPluginUpdater, ActionPickRandom, ActionEditToC, ActionSortBy,
         ActionMarkBooks, ActionEmbed, ActionTemplateTester, ActionTagMapper, ActionAuthorMapper,
-        ActionVirtualLibrary]
+        ActionVirtualLibrary, ActionBrowseAnnotations]
 
 # }}}
 
@@ -1945,7 +1951,6 @@ if __name__ == '__main__':
     try:
         subprocess.check_call(['python', '-c', textwrap.dedent(
         '''
-        from __future__ import print_function
         import time, sys, init_calibre
         st = time.time()
         import calibre.customize.builtins
