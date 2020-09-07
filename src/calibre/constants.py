@@ -5,7 +5,7 @@ from polyglot.builtins import map, unicode_type, environ_item, hasenv, getenv, a
 import sys, locale, codecs, os, importlib, collections
 
 __appname__   = 'calibre'
-numeric_version = (4, 99, 13)
+numeric_version = (4, 99, 14)
 __version__   = '.'.join(map(unicode_type, numeric_version))
 git_version   = None
 __author__    = "Kovid Goyal <kovid@kovidgoyal.net>"
@@ -55,6 +55,25 @@ winerror   = importlib.import_module('winerror') if iswindows else None
 win32api   = importlib.import_module('win32api') if iswindows else None
 fcntl      = None if iswindows else importlib.import_module('fcntl')
 dark_link_color = '#6cb4ee'
+builtin_colors_light = {
+    'yellow': '#ffeb6b',
+    'green': '#c0ed72',
+    'blue': '#add8ff',
+    'red': '#ffb0ca',
+    'purple': '#d9b2ff',
+}
+builtin_colors_dark = {
+    'yellow': '#c18d18',
+    'green': '#306f50',
+    'blue': '#265589',
+    'red': '#a23e5a',
+    'purple': '#505088',
+}
+builtin_decorations = {
+    'wavy': {'text-decoration-style': 'wavy', 'text-decoration-color': 'red', 'text-decoration-line': 'underline'},
+    'strikeout': {'text-decoration-line': 'line-through', 'text-decoration-color': 'red'},
+}
+
 
 _osx_ver = None
 

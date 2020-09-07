@@ -15,28 +15,9 @@ from widgets import create_button
 ICON_SIZE_VAL = 3
 ICON_SIZE_UNIT = 'ex'
 ICON_SIZE = f'{ICON_SIZE_VAL}{ICON_SIZE_UNIT}'
-
-builtin_colors_light = {
-    'yellow': '#ffeb6b',
-    'green': '#c0ed72',
-    'blue': '#add8ff',
-    'red': '#ffb0ca',
-    'purple': '#d9b2ff',
-}
-
-builtin_colors_dark = {
-    'yellow': '#c18d18',
-    'green': '#306f50',
-    'blue': '#265589',
-    'red': '#a23e5a',
-    'purple': '#505088',
-}
-
-
-builtin_decorations_light = builtin_decorations_dark = {
-    'wavy': {'text-decoration-style': 'wavy', 'text-decoration-color': 'red', 'text-decoration-line': 'underline'},
-    'strikeout': {'text-decoration-line': 'line-through', 'text-decoration-color': 'red'},
-}
+builtin_colors_light = v'''__BUILTIN_COLORS_LIGHT__'''
+builtin_colors_dark = v'''__BUILTIN_COLORS_DARK__'''
+builtin_decorations_light = builtin_decorations_dark = v'''__BUILTIN_DECORATIONS__'''
 
 
 def builtin_friendly_name(kind, which):
@@ -70,7 +51,7 @@ def all_builtin_styles():
         ans.push({'type': 'builtin', 'kind': 'decoration', 'which': which})
     return ans
 
-all_style_keys = v"'type kind which background-color text-decoration-line text-decoration-color text-decoration-style'.split(' ')"
+all_style_keys = v"'type kind which light dark background-color text-decoration-line text-decoration-color text-decoration-style'.split(' ')"
 
 
 def custom_color_theme(name, lightbg, darkbg):
@@ -298,6 +279,10 @@ class AddStyle:  # {{{
     def focus(self):
         self.get_container().querySelector('input[name=friendly_name]').focus()
 
+    def init(self):
+        self.get_container().querySelector('input[name=friendly_name]').value = ''
+        self.focus()
+
     @property
     def style_type(self):
         return self.get_container().querySelector('input[name=style_type]:checked').value
@@ -411,7 +396,7 @@ class EditNotesAndColors:  # {{{
                 c = self.container
                 c.firstChild.style.display = 'none'
                 c.lastChild.style.display = 'block'
-                self.add_style.focus()
+                self.add_style.init()
         ))
 
         self.set_visibility_of_remove_button()
@@ -426,13 +411,26 @@ class EditNotesAndColors:  # {{{
         self.notes_edit.focus()
 
     def add_new_style(self, new_style):
-        item = self.add_color(HighlightStyle(new_style), True)
-        item.classList.add('custom-style')
-        self.make_swatch_current(item)
-        sd = get_session_data()
-        custom_highlight_styles = sd.get('custom_highlight_styles')
-        custom_highlight_styles.unshift(new_style)
-        sd.set('custom_highlight_styles', custom_highlight_styles)
+        hs = HighlightStyle(new_style)
+        item = self.add_color(hs, True)
+        if not item:
+            # happens if the newly created style is the same as some existing
+            # style
+            for q in self.container.getElementsByClassName('swatch'):
+                if q.dataset.key is hs.key:
+                    item = q
+                    break
+        if item:
+            item.classList.add('custom-style')
+            self.make_swatch_current(item)
+            sd = get_session_data()
+            new_styles = v'[new_style]'
+            seen = {hs.key: True}
+            for style in sd.get('custom_highlight_styles'):
+                hso = HighlightStyle(style)
+                if not seen[hso.key]:
+                    new_styles.push(style)
+            sd.set('custom_highlight_styles', new_styles)
 
     def set_visibility_of_remove_button(self):
         c = self.container
@@ -454,7 +452,9 @@ class EditNotesAndColors:  # {{{
         )
         if is_current:
             item.classList.add('current-swatch')
+        item.classList.add('swatch')
         item.dataset.style = hs.serialized()
+        item.dataset.key = hs.key
         parent = self.container.getElementsByClassName('color-block')[0]
         if at_start:
             parent.insertBefore(item, parent.firstChild)

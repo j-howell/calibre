@@ -468,9 +468,10 @@ class Results(QTreeWidget):  # {{{
             lines = []
             for i, node in enumerate(toc_nodes):
                 lines.append('\xa0\xa0' * i + '➤ ' + (node.get('title') or _('Unknown')))
-            tt = ngettext('Table of Contents section:', 'Table of Contents sections:', len(lines))
-            tt += '\n' + '\n'.join(lines)
-            section.setToolTip(0, tt)
+            if lines:
+                tt = ngettext('Table of Contents section:', 'Table of Contents sections:', len(lines))
+                tt += '\n' + '\n'.join(lines)
+                section.setToolTip(0, tt)
             self.section_map[section_key] = section
             self.addTopLevelItem(section)
             section.setExpanded(True)
@@ -679,6 +680,9 @@ class SearchPanel(QWidget):  # {{{
 
     def find_next_requested(self, previous):
         self.results.find_next(previous)
+
+    def trigger(self):
+        self.search_input.find_next()
 
     def do_show_search_result(self, sr):
         self.show_search_result.emit(sr.for_js)
