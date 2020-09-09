@@ -249,7 +249,6 @@ class Highlights(QTreeWidget):
         return self.num_of_items
 
     def find_query(self, query):
-        cr = self.currentRow()
         pat = query.regex
         items = tuple(self.iteritems())
         count = len(items)
@@ -257,7 +256,8 @@ class Highlights(QTreeWidget):
         ch = self.current_highlight
         if ch:
             q = ch['uuid']
-            for i, h in enumerate(items):
+            for i, item in enumerate(items):
+                h = item.data(0, Qt.UserRole)
                 if h['uuid'] == q:
                     cr = i
         if query.backwards:
@@ -292,7 +292,9 @@ class Highlights(QTreeWidget):
         return False
 
     def item_activated(self, item):
-        self.jump_to_highlight.emit(item.data(0, Qt.UserRole))
+        h = item.data(0, Qt.UserRole)
+        if h is not None:
+            self.jump_to_highlight.emit(h)
 
     @property
     def current_highlight(self):
