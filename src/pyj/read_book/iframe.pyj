@@ -57,12 +57,12 @@ from read_book.settings import (
 from read_book.shortcuts import (
     create_shortcut_map, keyevent_as_shortcut, shortcut_for_key_event
 )
-from read_book.toc import update_visible_toc_anchors
+from read_book.toc import update_visible_toc_anchors, find_anchor_before_range
 from read_book.touch import (
     create_handlers as create_touch_handlers, reset_handlers as reset_touch_handlers
 )
 from read_book.viewport import scroll_viewport
-from utils import debounce, html_escape, is_ios
+from utils import debounce, is_ios
 
 FORCE_FLOW_MODE = False
 CALIBRE_VERSION = '__CALIBRE_VERSION__'
@@ -617,9 +617,8 @@ class IframeBoss:
         if self.content_ready:
             sc_name = shortcut_for_key_event(evt, self.keyboard_shortcut_map)
             if sc_name:
-                if self.handle_navigation_shortcut(sc_name, evt):
-                    evt.preventDefault()
-                else:
+                evt.preventDefault()
+                if not self.handle_navigation_shortcut(sc_name, evt):
                     self.send_message('handle_shortcut', name=sc_name)
 
     def on_handle_navigation_shortcut(self, data):
@@ -704,15 +703,24 @@ class IframeBoss:
         self.last_search_at = window.performance.now()
         if data.searched_in_spine:
             window.getSelection().removeAllRanges()
-        if window.find(data.text, False, data.backwards, from_load and data.backwards):
+        wrap_search = from_load and data.backwards
+        found = window.find(data.text, False, data.backwards, wrap_search)
+        if not found and wrap_search:
+            # wrapping is not implemented on Firefox
+            prev_range = None
+            while window.find(data.text, False):
+                prev_range = window.getSelection().getRangeAt(0)
+            if prev_range:
+                sel = window.getSelection()
+                sel.removeAllRanges()
+                sel.addRange(prev_range)
+                found = window.find(data.text, False, True)
+        if found:
             if current_layout_mode() is not 'flow':
                 snap_to_selection()
         else:
-            if from_load:
-                self.send_message('error', title=_('Invisible text'), msg=_(
-                    'The text <i>{}</i> is present on this page but not visible').format(html_escape(data.text)))
-            else:
-                self.send_message('find_in_spine', text=data.text, backwards=data.backwards, searched_in_spine=data.searched_in_spine)
+            msg_type = 'invisible_text' if from_load else 'find_in_spine'
+            self.send_message(msg_type, text=data.text, backwards=data.backwards, searched_in_spine=data.searched_in_spine)
 
     def show_search_result(self, data, from_load):
         self.last_search_at = window.performance.now()
@@ -785,9 +793,10 @@ class IframeBoss:
                     sel.removeAllRanges()
         elif dtype is 'apply-highlight':
             sel = window.getSelection()
-            text = sel.toString()
             if not sel.rangeCount:
                 return
+            anchor_before = find_anchor_before_range(sel.getRangeAt(0), self.book.manifest.toc_anchor_map, self.anchor_funcs)
+            text = sel.toString()
             bounds = cfi_for_selection()
             style = highlight_style_as_css(data.style, opts.is_dark_theme, opts.color_scheme.foreground)
             cls = 'crw-has-dot' if data.has_notes else None
@@ -816,6 +825,7 @@ class IframeBoss:
                 bounds=bounds,
                 removed_highlights=removed_highlights,
                 highlighted_text=text,
+                anchor_before=anchor_before
             )
             reset_find_caches()
         else:

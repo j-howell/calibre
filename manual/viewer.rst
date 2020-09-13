@@ -48,10 +48,10 @@ using the viewer Preferences under :guilabel:`Page layout` or by pressing the
 Bookmarks
 ^^^^^^^^^^^^
 
-When you are in the middle of a book and close the viewer, it will remember
+When you are in the middle of a book and close the E-book viewer, it will remember
 where you stopped reading and return there the next time you open the book. You
 can also set bookmarks in the book by using the :guilabel:`Bookmarks` button in
-the viewer controls or pressing :kbd:`ctrl+b`.  When viewing EPUB format books,
+the E-book viewer controls or pressing :kbd:`ctrl+b`.  When viewing EPUB format books,
 these bookmarks are actually saved in the EPUB file itself. You can add
 bookmarks, then send the file to a friend.  When they open the file, they will
 be able to see your bookmarks. You can turn off this behavior in the
@@ -112,9 +112,9 @@ the handles to the top or bottom margins to scroll while selecting.
 You can use the :guilabel:`Browse highlights` button in the viewer
 controls to show a separate panel with a list of all highlights in the book.
 
-You can browse *all highlights* in your entire calibre library by going to
-:guilabel:`Preferences->Toolbars` in calibre and adding the :guilabel:`Browse
-annotations` tool to the toolbar.
+You can browse *all highlights* in your entire calibre library by right
+clicking the :guilabel:`View` button and choosing :guilabel:`Browse
+annotations`.
 
 Finally, if you use the calibre Content server's in browser viewer, you can
 have the viewer sync its annotations with the browser viewer by going to
