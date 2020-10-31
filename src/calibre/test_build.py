@@ -12,7 +12,7 @@ Test a binary calibre build to ensure that all needed binary images/libraries ha
 
 import os, ctypes, sys, unittest, time, shutil
 
-from calibre.constants import plugins, iswindows, islinux, ismacos, plugins_loc
+from calibre.constants import iswindows, islinux, ismacos, plugins_loc
 from polyglot.builtins import iteritems, map, unicode_type, getenv
 
 is_ci = os.environ.get('CI', '').lower() == 'true'
@@ -22,7 +22,8 @@ class BuildTest(unittest.TestCase):
 
     @unittest.skipUnless(iswindows and not is_ci, 'DLL loading needs testing only on windows (non-continuous integration)')
     def test_dlls(self):
-        base = plugins['winutil'][0].get_dll_directory()
+        from calibre_extensions import winutil
+        base = winutil.get_dll_directory()
         for x in os.listdir(base):
             if x.lower().endswith('.dll'):
                 try:
@@ -31,8 +32,6 @@ class BuildTest(unittest.TestCase):
                     self.assertTrue(False, 'Failed to load DLL %s with error: %s' % (x, err))
         from Crypto.Cipher import AES
         del AES
-        from pywintypes import error
-        del error
 
     @unittest.skipUnless(islinux, 'DBUS only used on linux')
     def test_dbus(self):
@@ -104,17 +103,18 @@ class BuildTest(unittest.TestCase):
 
     def test_plugins(self):
         exclusions = set()
-        if islinux and (not os.path.exists('/dev/bus/usb') and not os.path.exists('/proc/bus/usb')):
+        if islinux and not os.path.exists('/dev/bus/usb'):
             # libusb fails to initialize in containers without USB subsystems
             exclusions.update(set('libusb libmtp'.split()))
-        for name in plugins:
+        from importlib import import_module
+        from importlib.resources import contents
+        for name in contents('calibre_extensions'):
             if name in exclusions:
                 if name in ('libusb', 'libmtp'):
                     # Just check that the DLL can be loaded
                     ctypes.CDLL(os.path.join(plugins_loc, name + ('.dylib' if ismacos else '.so')))
                 continue
-            mod, err = plugins[name]
-            self.assertFalse(err or not mod, 'Failed to load plugin: ' + name + ' with error:\n' + err)
+            import_module('calibre_extensions.' + name)
 
     def test_lxml(self):
         from calibre.utils.cleantext import test_clean_xml_chars
@@ -149,9 +149,12 @@ class BuildTest(unittest.TestCase):
     @unittest.skipUnless(iswindows, 'winutil is windows only')
     def test_winutil(self):
         import tempfile
-        from calibre.constants import plugins
         from calibre import strftime
-        winutil = plugins['winutil'][0]
+        from calibre_extensions import winutil
+        self.assertEqual(winutil.special_folder_path(winutil.CSIDL_APPDATA), winutil.known_folder_path(winutil.FOLDERID_RoamingAppData))
+        self.assertEqual(winutil.special_folder_path(winutil.CSIDL_LOCAL_APPDATA), winutil.known_folder_path(winutil.FOLDERID_LocalAppData))
+        self.assertEqual(winutil.special_folder_path(winutil.CSIDL_FONTS), winutil.known_folder_path(winutil.FOLDERID_Fonts))
+        self.assertEqual(winutil.special_folder_path(winutil.CSIDL_PROFILE), winutil.known_folder_path(winutil.FOLDERID_Profile))
 
         def au(x, name):
             self.assertTrue(
@@ -187,6 +190,7 @@ class BuildTest(unittest.TestCase):
         self.assertRaises(OSError, winutil.delete_file, path)
         self.assertRaises(OSError, winutil.create_file,
             os.path.join(path, 'cannot'), winutil.GENERIC_READ, 0, winutil.OPEN_ALWAYS, winutil.FILE_ATTRIBUTE_NORMAL)
+        self.assertTrue(winutil.supports_hardlinks(os.path.abspath(os.getcwd())[0] + ':\\'))
         sz = 23
         data = os.urandom(sz)
         open(path, 'wb').write(data)
@@ -364,7 +368,7 @@ class BuildTest(unittest.TestCase):
 
     @unittest.skipUnless(iswindows, 'WPD is windows only')
     def test_wpd(self):
-        wpd = plugins['wpd'][0]
+        from calibre_extensions import wpd
         try:
             wpd.init('calibre', 1, 1, 1)
         except wpd.NoWPD:
