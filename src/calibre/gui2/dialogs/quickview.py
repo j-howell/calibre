@@ -490,7 +490,9 @@ class Quickview(QDialog, Ui_Quickview):
             self.indicate_no_items()
 
     def is_category(self, key):
-        return key is not None and self.fm[key]['is_category']
+        return key is not None and (self.fm[key]['is_category'] or
+                                    (self.fm[key]['datatype'] == 'composite' and
+                                     self.fm[key]['display'].get('make_category', False)))
 
     def _refresh(self, book_id, key):
         '''
@@ -513,7 +515,9 @@ class Quickview(QDialog, Ui_Quickview):
 
         mi = self.db.get_metadata(book_id, index_is_id=True, get_user_categories=False)
         vals = mi.get(key, None)
-
+        if self.fm[key]['datatype'] == 'composite' and self.fm[key]['is_multiple']:
+            sep = self.fm[key]['is_multiple'].get('cache_to_list', ',')
+            vals = [v.strip() for v in vals.split(sep) if v.strip()]
         try:
             # Check if we are in the GridView and there are no values for the
             # selected column. In this case switch the column to 'authors'
