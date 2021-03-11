@@ -91,9 +91,9 @@ These buttons behave just like those in a web browser.
 Reference mode
 ^^^^^^^^^^^^^^^^^
 
-calibre also has a very handy :guilabel:`Reference mode`.  You can turn it on
+calibre also has a very handy :guilabel:`Reference mode`. You can turn it on
 by clicking the :guilabel:`Reference mode` button in the viewer controls.  Once
-you do this, every mouse over a paragraph, calibre will display a unique number
+you do this, every paragraph will have a unique number displayed at the start,
 made up of the section and paragraph numbers.
 
 You can use this number to unambiguously refer to parts of the books when
@@ -109,9 +109,10 @@ When you select text in the viewer, a little popup bar appears next to the
 selection. You can click the highlight button in that bar to create a
 highlight. You can add notes and change the color of the highlight. On a touch
 screen, long tap a word to select it and show the popup bar. Once in highlight
-mode you can tap the :guilabel:`Adjust selection` button to change what text is
-selected, using touch screen friendly selection handles.  Drag
-the handles to the top or bottom margins to scroll while selecting.
+mode you can change what text is selected, using touch screen friendly selection
+handles. Drag the handles to the top or bottom margins to scroll while selecting.
+You can also hold the :kbd:`Shift` key and click to extend the selection,
+particularly useful for multi-page selections.
 
 You can use the :guilabel:`Highlights` button in the viewer
 controls to show a separate panel with a list of all highlights in the book,
@@ -152,6 +153,11 @@ behavior`.
 
 .. note:: On Linux, :guilabel:`Read aloud` requires `Speech Dispatcher
    <https://freebsoft.org/speechd>`_ to be installed and working.
+
+.. note:: On Windows, not all installed voices may be visible to the SAPI
+   sub-system that is used for text-to-speech. There are `instructions to
+   make all voices visible
+   <https://www.mobileread.com/forums/showpost.php?p=4084051&postcount=108>`_.
 
 
 Following links using only the keyboard

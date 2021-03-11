@@ -11,7 +11,7 @@ from contextlib import contextmanager
 
 from html5_parser import parse
 from lxml import html
-from PyQt5.Qt import (
+from qt.core import (
     QAction, QApplication, QBrush, QByteArray, QCheckBox, QColor, QColorDialog,
     QDialog, QDialogButtonBox, QFont, QFontInfo, QFontMetrics, QFormLayout,
     QHBoxLayout, QIcon, QKeySequence, QLabel, QLineEdit, QMenu, QPalette,
@@ -818,6 +818,12 @@ class EditorWidget(QTextEdit, LineEditECM):  # {{{
             vis = parent.toolbars_visible
             menu.addAction(_('%s toolbars') % (_('Hide') if vis else _('Show')), parent.toggle_toolbars)
         menu.addSeparator()
+        am = QMenu(_('Advanced'))
+        menu.addMenu(am)
+        am.addAction(self.action_block_style)
+        am.addAction(self.action_insert_link)
+        am.addAction(self.action_background)
+        am.addAction(self.action_color)
         menu.addAction(_('Smarten punctuation'), parent.smarten_punctuation)
         menu.exec_(ev.globalPos())
 

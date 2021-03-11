@@ -7,7 +7,7 @@ __copyright__ = '2010, Kovid Goyal <kovid@kovidgoyal.net>'
 __docformat__ = 'restructuredtext en'
 
 import functools
-from PyQt5.Qt import (
+from qt.core import (
     QAction, QApplication, QIcon, QLabel, QMenu, QPainter, QSizePolicy, QSplitter,
     QStackedWidget, QStatusBar, QStyle, QStyleOption, Qt, QTabBar, QTimer,
     QToolButton, QVBoxLayout, QWidget, QDialog, QEvent
@@ -48,7 +48,7 @@ class LibraryViewMixin(object):  # {{{
         self.library_view.files_dropped.connect(self.iactions['Add Books'].files_dropped, type=Qt.ConnectionType.QueuedConnection)
         self.library_view.books_dropped.connect(self.iactions['Edit Metadata'].books_dropped, type=Qt.ConnectionType.QueuedConnection)
         self.library_view.add_column_signal.connect(partial(self.iactions['Preferences'].do_config,
-            initial_plugin=('Interface', 'Custom Columns')),
+            initial_plugin=('Interface', 'Custom Columns'), close_after_initial=True),
                 type=Qt.ConnectionType.QueuedConnection)
         for func, args in [
                              ('connect_to_search_box', (self.search,

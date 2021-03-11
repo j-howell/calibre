@@ -7,7 +7,7 @@ __copyright__ = '2013, Kovid Goyal <kovid at kovidgoyal.net>'
 
 from functools import partial
 
-from PyQt5.Qt import (
+from qt.core import (
     Qt, QMenu, QIcon, QDialog, QGridLayout, QLabel, QLineEdit, QComboBox, QFrame,
     QDialogButtonBox, QSize, QVBoxLayout, QListWidget, QRadioButton, QAction, QTextBrowser, QAbstractItemView)
 
@@ -152,8 +152,8 @@ class CreateVirtualLibrary(QDialog):  # {{{
             you do will only search within the books in the Virtual library. This
             is a good way to partition your large library into smaller and easier to work with subsets.</p>
 
-            <p>For example you can use a Virtual library to only show you books with the tag <i>"Unread"</i>
-            or only books by <i>"My favorite author"</i> or only books in a particular series.</p>
+            <p>For example you can use a Virtual library to only show you books with the tag <i>Unread</i>
+            or only books by <i>My favorite author</i> or only books in a particular series.</p>
 
             <p>More information and examples are available in the
             <a href="%s">User Manual</a>.</p>

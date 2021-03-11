@@ -10,7 +10,7 @@ import copy
 import os
 import traceback
 from collections import OrderedDict, namedtuple
-from PyQt5.Qt import (
+from qt.core import (
     QAbstractItemModel, QFont, QIcon, QMimeData, QModelIndex, QObject, Qt,
     pyqtSignal
 )
@@ -216,7 +216,7 @@ class TagTreeItem(object):  # {{{
                 ar = self.average_rating
                 if ar:
                     tt.append(_('Average rating for books in this category: %.1f') % ar)
-                elif self.type == self.TAG and ar is not None:
+                elif self.type == self.TAG and ar is not None and self.tag.category != 'search':
                     tt.append(_('Books in this category are unrated'))
                 if self.type == self.TAG and self.tag.category == 'search':
                     tt.append(_('Search expression:') + ' ' + self.tag.search_expression)

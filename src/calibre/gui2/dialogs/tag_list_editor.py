@@ -5,7 +5,7 @@
 
 from functools import partial
 
-from PyQt5.Qt import (Qt, QDialog, QTableWidgetItem, QIcon, QByteArray, QSize, QAbstractItemView,
+from qt.core import (Qt, QDialog, QTableWidgetItem, QIcon, QByteArray, QSize, QAbstractItemView,
                       QDialogButtonBox, QItemDelegate, QApplication,
                       pyqtSignal, QAction, QFrame, QLabel, QTimer, QMenu, QColor)
 
@@ -297,7 +297,7 @@ class TagListEditor(QDialog, Ui_TagListEditor):
         ca = m.addAction(_('Filter by {}').format(item_name))
         ca.triggered.connect(partial(self.set_filter_text, item_name))
         if self.category is not None:
-            ca = m.addAction(_("Search the library for '{0}'").format(item_name))
+            ca = m.addAction(_("Search the library for {0}").format(item_name))
             ca.triggered.connect(partial(self.search_for_books, item))
             if disable_copy_paste_search:
                 ca.setEnabled(False)
@@ -319,7 +319,7 @@ class TagListEditor(QDialog, Ui_TagListEditor):
 
     def search_for_books(self, item):
         from calibre.gui2.ui import get_gui
-        get_gui().search.set_search_string('{0}:"{1}"'.format(self.category,
+        get_gui().search.set_search_string('{0}:"={1}"'.format(self.category,
                                    unicode_type(item.text()).replace(r'"', r'\"')))
 
         qv = get_quickview_action_plugin()

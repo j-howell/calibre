@@ -141,6 +141,7 @@ class Cache(object):
         self.format_metadata_cache = defaultdict(dict)
         self.formatter_template_cache = {}
         self.dirtied_cache = {}
+        self.vls_for_books_cache = None
         self.dirtied_sequence = 0
         self.cover_caches = set()
         self.clear_search_cache_count = 0
@@ -249,6 +250,7 @@ class Cache(object):
     def clear_search_caches(self, book_ids=None):
         self.clear_search_cache_count += 1
         self._search_api.update_or_clear(self, book_ids)
+        self.vls_for_books_cache = None
 
     @read_api
     def last_modified(self):
@@ -655,7 +657,7 @@ class Cache(object):
             self.backend.prefs.set_namespaced(namespace, name, val)
             return
         self.backend.prefs.set(name, val)
-        if name == 'grouped_search_terms':
+        if name in ('grouped_search_terms', 'virtual_libraries'):
             self._clear_search_caches()
         if name in dynamic_category_preferences:
             self._initialize_dynamic_categories()
@@ -724,7 +726,7 @@ class Cache(object):
                 return
             ret = buf.getvalue()
             if as_image:
-                from PyQt5.Qt import QImage
+                from qt.core import QImage
                 i = QImage()
                 i.loadFromData(ret)
                 ret = i
@@ -762,6 +764,25 @@ class Cache(object):
 
         return self.backend.copy_cover_to(path, dest, use_hardlink=use_hardlink,
                                           report_file_size=report_file_size)
+
+    @write_api
+    def compress_covers(self, book_ids, jpeg_quality=100, progress_callback=None):
+        '''
+        Compress the cover images for the specified books. A compression quality of 100
+        will perform lossless compression, otherwise lossy compression.
+
+        The progress callback will be called with the book_id and the old and new sizes
+        for each book that has been processed. If an error occurs, the news size will
+        be a string with the error details.
+        '''
+        jpeg_quality = max(10, min(jpeg_quality, 100))
+        path_map = {}
+        for book_id in book_ids:
+            try:
+                path_map[book_id] = self._field_for('path', book_id).replace('/', os.sep)
+            except AttributeError:
+                continue
+        self.backend.compress_covers(path_map, jpeg_quality, progress_callback)
 
     @read_api
     def copy_format_to(self, book_id, fmt, dest, use_hardlink=False, report_file_size=None):
@@ -2188,14 +2209,22 @@ class Cache(object):
 
     @read_api
     def virtual_libraries_for_books(self, book_ids):
-        libraries = self._pref('virtual_libraries', {})
-        ans = {book_id:[] for book_id in book_ids}
-        for lib, expr in iteritems(libraries):
-            books = self._search(expr)  # We deliberately dont use book_ids as we want to use the search cache
-            for book in book_ids:
-                if book in books:
-                    ans[book].append(lib)
-        return {k:tuple(sorted(v, key=sort_key)) for k, v in iteritems(ans)}
+        if self.vls_for_books_cache is None:
+            # Using a list is slightly faster than a set.
+            c = defaultdict(list)
+            libraries = self._pref('virtual_libraries', {})
+            for lib, expr in libraries.items():
+                for book in self._search(expr):
+                    c[book].append(lib)
+            self.vls_for_books_cache = {b:tuple(sorted(libs, key=sort_key)) for b, libs in c.items()}
+        if not book_ids:
+            book_ids = self._all_book_ids()
+        # book_ids is usually 1 long. The loop will be faster than a comprehension
+        r = {}
+        default = ()
+        for b in book_ids:
+            r[b] = self.vls_for_books_cache.get(b, default)
+        return r
 
     @read_api
     def user_categories_for_books(self, book_ids, proxy_metadata_map=None):

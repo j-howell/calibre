@@ -9,7 +9,7 @@ __docformat__ = 'restructuredtext en'
 import os, re, traceback
 from functools import partial
 
-from PyQt5.Qt import (
+from qt.core import (
     QStyledItemDelegate, Qt, QTreeView, pyqtSignal, QSize, QIcon, QApplication, QStyle, QAbstractItemView,
     QMenu, QPoint, QToolTip, QCursor, QDrag, QRect, QModelIndex,
     QLinearGradient, QPalette, QColor, QPen, QBrush, QFont, QTimer
@@ -782,8 +782,9 @@ class TagsView(QTreeView):  # {{{
                                 partial(self.context_menu_handler, action='search',
                                         search_state=TAG_SEARCH_STATES['mark_plus'],
                                         index=index))
-                        if add_child_search := (tag.is_hierarchical == '5state' and
-                                                len(tag_item.children)):
+                        add_child_search = (tag.is_hierarchical == '5state' and
+                                            len(tag_item.children))
+                        if add_child_search:
                             search_submenu.addAction(self.search_icon,
                                     _('Search for %s and its children')%display_name(tag),
                                     partial(self.context_menu_handler, action='search',

@@ -328,7 +328,7 @@ def render_metadata(mi, table, book_id, iframe_css):  # {{{
                 val = E.span(val).outerHTML
             else:
                 if field is 'comments' and '<' not in val:
-                    val = '\n'.join(['<p class="description">{}</p>'.format(x.pyreplace('\n', '<br>')) for x in val.split('\n\n')])
+                    val = '\n'.join(['<p class="description">{}</p>'.format(x.replace(/\n/g, '<br>')) for x in val.split('\n\n')])
             if hp is 'side':
                 add_row(name, val, is_html=True)
                 return
@@ -749,13 +749,13 @@ def search_internet(container_id):
     for name, url in [
         (_('Goodreads'), 'https://www.goodreads.com/book/author/{author}'),
         (_('Wikipedia'), 'https://en.wikipedia.org/w/index.php?search={author}'),
-        (_('Google books'), 'https://www.google.com/search?tbm=bks&q=inauthor:%22{author}%22'),
+        (_('Google Books'), 'https://www.google.com/search?tbm=bks&q=inauthor:%22{author}%22'),
     ]:
         author_links.appendChild(E.li(link_for(name, url)))
 
     for name, url in [
         (_('Goodreads'), 'https://www.goodreads.com/search?q={author}+{title}&search%5Bsource%5D=goodreads&search_type=books&tab=books'),
-        (_('Google books'), 'https://www.google.com/search?tbm=bks&q=inauthor:%22{author}%22+intitle:%22{title}%22'),
+        (_('Google Books'), 'https://www.google.com/search?tbm=bks&q=inauthor:%22{author}%22+intitle:%22{title}%22'),
         (_('Amazon'), 'https://www.amazon.com/s/ref=nb_sb_noss?url=search-alias%3Dstripbooks&field-keywords={author}+{title}'),
     ]:
         book_links.appendChild(E.li(link_for(name, url)))

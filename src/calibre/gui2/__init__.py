@@ -13,14 +13,13 @@ import threading
 from contextlib import contextmanager
 from threading import Lock, RLock
 
-from PyQt5.Qt import (
+from qt.core import (
     QT_VERSION, QApplication, QBuffer, QByteArray, QCoreApplication, QDateTime,
     QDesktopServices, QDialog, QEvent, QFileDialog, QFileIconProvider, QFileInfo, QPalette,
     QFont, QFontDatabase, QFontInfo, QFontMetrics, QIcon, QLocale, QColor,
     QNetworkProxyFactory, QObject, QSettings, QSocketNotifier, QStringListModel, Qt,
-    QThread, QTimer, QTranslator, QUrl, pyqtSignal, QIODevice, QDialogButtonBox
+    QThread, QTimer, QTranslator, QUrl, pyqtSignal, QIODevice, QDialogButtonBox, QStyle
 )
-from PyQt5.QtWidgets import QStyle  # Gives a nicer error message than import from Qt
 
 from calibre import as_unicode, prints
 from calibre.constants import (
@@ -805,8 +804,8 @@ def show_temp_dir_error(err):
     extra = _('Click "Show details" for more information.')
     if 'CALIBRE_TEMP_DIR' in os.environ:
         extra = _('The %s environment variable is set. Try unsetting it.') % 'CALIBRE_TEMP_DIR'
-    error_dialog(None, _('Could not create temporary directory'), _(
-        'Could not create temporary directory, calibre cannot start.') + ' ' + extra, det_msg=traceback.format_exc(), show=True)
+    error_dialog(None, _('Could not create temporary folder'), _(
+        'Could not create temporary folder, calibre cannot start.') + ' ' + extra, det_msg=traceback.format_exc(), show=True)
 
 
 def setup_hidpi():
@@ -909,7 +908,7 @@ class Application(QApplication):
         except EnvironmentError as err:
             if not headless:
                 show_temp_dir_error(err)
-            raise SystemExit('Failed to create temporary directory')
+            raise SystemExit('Failed to create temporary folder')
         if DEBUG and not headless:
             prints('devicePixelRatio:', self.devicePixelRatio())
             s = self.primaryScreen()
@@ -1171,14 +1170,14 @@ class Application(QApplication):
 
     @property
     def current_custom_colors(self):
-        from PyQt5.Qt import QColorDialog
+        from qt.core import QColorDialog
 
         return [col.getRgb() for col in
                     (QColorDialog.customColor(i) for i in range(QColorDialog.customCount()))]
 
     @current_custom_colors.setter
     def current_custom_colors(self, colors):
-        from PyQt5.Qt import QColorDialog
+        from qt.core import QColorDialog
         num = min(len(colors), QColorDialog.customCount())
         for i in range(num):
             QColorDialog.setCustomColor(i, QColor(*colors[i]))
@@ -1203,10 +1202,10 @@ class Application(QApplication):
     def setup_unix_signals(self):
         setup_unix_signals(self)
 
-    def signal_received(self, read_fd):
+    def signal_received(self):
         try:
-            os.read(read_fd, 1024)
-        except EnvironmentError:
+            os.read(self.signal_notifier.socket(), 1024)
+        except OSError:
             return
         self.shutdown_signal_received.emit()
 
@@ -1386,8 +1385,10 @@ def elided_text(text, font=None, width=300, pos='middle'):
     rendered, replacing characters from the left, middle or right (as per pos)
     of the string with an ellipsis. Results in a string much closer to the
     limit than Qt's elidedText().'''
-    from PyQt5.Qt import QFontMetrics, QApplication
-    fm = QApplication.fontMetrics() if font is None else (font if isinstance(font, QFontMetrics) else QFontMetrics(font))
+    from qt.core import QFontMetrics, QApplication
+    if font is None:
+        font = QApplication.instance().font()
+    fm = (font if isinstance(font, QFontMetrics) else QFontMetrics(font))
     delta = 4
     ellipsis = '\u2026'
 
@@ -1467,7 +1468,6 @@ if is_running_from_develop:
 
 
 def event_type_name(ev_or_etype):
-    from PyQt5.QtCore import QEvent
     etype = ev_or_etype.type() if isinstance(ev_or_etype, QEvent) else ev_or_etype
     for name, num in iteritems(vars(QEvent)):
         if num == etype:

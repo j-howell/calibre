@@ -5,11 +5,11 @@
 
 import json
 
-from PyQt5.Qt import (
+from qt.core import (
     QFrame, QGridLayout, QIcon, QLabel, QLineEdit, QListWidget, QPushButton, QSize,
     QSplitter, Qt, QUrl, QVBoxLayout, QWidget, pyqtSignal
 )
-from PyQt5.QtWebEngineWidgets import QWebEnginePage, QWebEngineScript, QWebEngineView
+from qt.webengine import QWebEnginePage, QWebEngineScript, QWebEngineView
 
 from calibre.gui2 import error_dialog, gprefs, question_dialog
 from calibre.gui2.webengine import secure_webengine
@@ -131,6 +131,7 @@ class ItemEdit(QWidget):
 
         self.search_text = s = QLineEdit(self)
         s.setPlaceholderText(_('Search for text...'))
+        s.returnPressed.connect(self.find_next)
         l.addWidget(s, 1, 0)
         self.ns_button = b = QPushButton(QIcon(I('arrow-down.png')), _('Find &next'), self)
         b.clicked.connect(self.find_next)

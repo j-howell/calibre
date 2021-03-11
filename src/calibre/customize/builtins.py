@@ -21,7 +21,7 @@ class PML2PMLZ(FileTypePlugin):
     name = 'PML to PMLZ'
     author = 'John Schember'
     description = _('Create a PMLZ archive containing the PML file '
-        'and all images in the directory pmlname_img or images. '
+        'and all images in the folder pmlname_img or images. '
         'This plugin is run every time you add '
         'a PML file to the library.')
     version = numeric_version
@@ -133,7 +133,7 @@ plugins += [HTML2ZIP, PML2PMLZ, TXT2TXTZ, ArchiveExtract, KPFExtract]
 class ComicMetadataReader(MetadataReaderPlugin):
 
     name = 'Read comic metadata'
-    file_types = {'cbr', 'cbz'}
+    file_types = {'cbr', 'cbz', 'cb7'}
     description = _('Extract cover from comic files')
 
     def customization_help(self, gui=False):
@@ -148,8 +148,12 @@ class ComicMetadataReader(MetadataReaderPlugin):
                 ftype = 'cbr'
             elif id_.startswith(b'PK'):
                 ftype = 'cbz'
+            elif id_.startswith(b'7z'):
+                ftype = 'cb7'
         if ftype == 'cbr':
             from calibre.utils.unrar import extract_cover_image
+        elif ftype == 'cb7':
+            from calibre.utils.seven_zip import extract_cover_image
         else:
             from calibre.libunzip import extract_cover_image
         from calibre.ebooks.metadata import MetaInformation
@@ -1618,17 +1622,6 @@ class StoreEbooksGratuitsStore(StoreBase):
 #     affiliate = True
 
 
-class StoreEKnigiStore(StoreBase):
-    name = 'еКниги'
-    author = 'Alex Stanev'
-    description = 'Онлайн книжарница за електронни книги и аудио риалити романи'
-    actual_plugin = 'calibre.gui2.store.stores.eknigi_plugin:eKnigiStore'
-
-    headquarters = 'BG'
-    formats = ['EPUB', 'PDF', 'HTML']
-    affiliate = True
-
-
 class StoreEmpikStore(StoreBase):
     name = 'Empik'
     author = 'Tomasz Długosz'
@@ -1904,7 +1897,6 @@ plugins += [
     StoreEbookpointStore,
     StoreEbookscomStore,
     StoreEbooksGratuitsStore,
-    StoreEKnigiStore,
     StoreEmpikStore,
     StoreFeedbooksStore,
     StoreGoogleBooksStore,

@@ -69,10 +69,10 @@ class BuildTest(unittest.TestCase):
         del CHMFile, chmlib
 
     def test_chardet(self):
-        from chardet import detect
+        from cchardet import detect
         raw = 'mūsi Füße'.encode('utf-8')
         data = detect(raw)
-        self.assertEqual(data['encoding'], 'utf-8')
+        self.assertEqual(data['encoding'].lower(), 'utf-8')
         self.assertGreater(data['confidence'], 0.5)
         # The following is used by html5lib
         from chardet.universaldetector import UniversalDetector
@@ -286,11 +286,11 @@ class BuildTest(unittest.TestCase):
 
     @unittest.skipIf('SKIP_QT_BUILD_TEST' in os.environ, 'Skipping Qt build test as it causes crashes in the macOS VM')
     def test_qt(self):
-        from PyQt5.QtCore import QTimer
-        from PyQt5.QtWidgets import QApplication
-        from PyQt5.QtWebEngineWidgets import QWebEnginePage
-        from PyQt5.QtGui import QImageReader, QFontDatabase
-        from PyQt5.QtNetwork import QNetworkAccessManager
+        from qt.core import QTimer
+        from qt.core import QApplication
+        from qt.webengine import QWebEnginePage
+        from qt.core import QImageReader, QFontDatabase
+        from qt.core import QNetworkAccessManager
         from calibre.utils.img import image_from_data, image_to_data, test
         # Ensure that images can be read before QApplication is constructed.
         # Note that this requires QCoreApplication.libraryPaths() to return the
@@ -321,7 +321,7 @@ class BuildTest(unittest.TestCase):
             na = QNetworkAccessManager()
             self.assertTrue(hasattr(na, 'sslErrors'), 'Qt not compiled with openssl')
             if iswindows:
-                from PyQt5.Qt import QtWin
+                from qt.core import QtWin
                 QtWin
             p = QWebEnginePage()
 
@@ -371,6 +371,10 @@ class BuildTest(unittest.TestCase):
 
     def test_unrar(self):
         from calibre.utils.unrar import test_basic
+        test_basic()
+
+    def test_7z(self):
+        from calibre.utils.seven_zip import test_basic
         test_basic()
 
     @unittest.skipUnless(iswindows, 'WPD is windows only')
