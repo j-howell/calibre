@@ -185,7 +185,17 @@ class IframeBoss:
 
     def modify_selection(self, data):
         sel = window.getSelection()
-        sel.modify('extend', data.direction, data.granularity)
+        if data.granularity is 'all':
+            r = document.createRange()
+            r.selectNode(document.body)
+            sel.removeAllRanges()
+            sel.addRange(r)
+        else:
+            try:
+                sel.modify('extend', data.direction, data.granularity)
+            except:
+                if data.granularity is 'paragraph':
+                    sel.modify('extend', data.direction, 'line')
         self.ensure_selection_visible()
 
     def initialize(self, data):
@@ -429,9 +439,10 @@ class IframeBoss:
         if runtime.is_standalone_viewer:
             self.listen_for_image_double_clicks()
         self.content_ready = True
-        # this is the loading styles used to suppress scrollbars during load
-        # added in unserialize_html
-        document.head.removeChild(document.head.firstChild)
+        if document.head?.firstChild:
+            # this is the loading styles used to suppress scrollbars during load
+            # added in unserialize_html
+            document.head.removeChild(document.head.firstChild)
 
         csi = current_spine_item()
         if csi.initial_position:

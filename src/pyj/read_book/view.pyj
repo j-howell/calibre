@@ -559,10 +559,12 @@ class View:
             ui_operations.edit_book(current_spine_item(), self.current_file_progress_frac, self.currently_showing?.selection?.text)
         elif data.name is 'goto_location':
             self.overlay.show_ask_for_location()
-        elif data.name is 'shrink_selection_by_word':
-            self.iframe_wrapper.send_message('modify_selection', direction='backward', granularity='word')
-        elif data.name is 'extend_selection_by_word':
-            self.iframe_wrapper.send_message('modify_selection', direction='forward', granularity='word')
+        elif data.name is 'select_all':
+            self.iframe_wrapper.send_message('modify_selection', granularity='all')
+        elif data.name.startsWith('shrink_selection_by_'):
+            self.iframe_wrapper.send_message('modify_selection', direction='backward', granularity=data.name.rpartition('_')[-1])
+        elif data.name.startsWith('extend_selection_by_'):
+            self.iframe_wrapper.send_message('modify_selection', direction='forward', granularity=data.name.rpartition('_')[-1])
         elif data.name is 'scrollspeed_increase':
             self.update_scroll_speed(SCROLL_SPEED_STEP)
         elif data.name is 'scrollspeed_decrease':
@@ -927,6 +929,9 @@ class View:
         if ui_operations.update_last_read_time:
             ui_operations.update_last_read_time(book)
         pos = {'replace_history':True}
+        if not book.manifest.spine.length:
+            ui_operations.show_error(_('Invalid book'), _('This book is empty, with no items in the spine'))
+            return
         name = book.manifest.spine[0]
         cfi = None
         if initial_position and initial_position.type is 'cfi' and initial_position.data.startswith('epubcfi(/'):
@@ -1092,7 +1097,7 @@ class View:
         if not self.book or not self.book.manifest:
             return
         index, refnum = reference.split('.')
-        index, refnum = int(index), int(refnum)
+        index, refnum = int(index), (int(refnum) if refnum else 1)
         chapter_name = self.book.manifest.spine[index]
         if not chapter_name:
             return False

@@ -193,10 +193,7 @@ Browser support
 
 The new calibre server makes lots of use of advanced HTML 5 and CSS 3 features.
 As such it requires an up-to-date browser to use. It has been tested on Android
-Chrome and iOS Safari as well as Chrome and Firefox on the desktop. It is known
-not to work with Internet Explorer and Microsoft Edge (hopefully Edge will
-start working when Microsoft gets around to implementing a few missing
-standards).
+Chrome and iOS Safari as well as Chrome and Firefox on the desktop.
 
 The server is careful to use functionality that has either been already
 standardised or is on the standards track. As such if it does not currently
@@ -270,6 +267,10 @@ server. In this case, run the calibre server as::
 
 Now setup the virtual host in your main server, for example, for nginx::
 
+    http {
+        client_max_body_size 64M;  # needed to upload large books
+    }
+
     server {
         listen [::]:80;
         server_name myserver.example.com;
@@ -304,6 +305,10 @@ use a URL prefix. Start the calibre server as::
 The key parameter here is ``--url-prefix /calibre``. This causes the Content server to serve all URLs prefixed by ``/calibre``. To see this in action, visit ``http://localhost:8080/calibre`` in your browser. You should see the normal Content server website, but now it will run under ``/calibre``.
 
 With nginx, the required configuration is::
+
+    http {
+        client_max_body_size 64M;  # needed to upload large books
+    }
 
     proxy_set_header X-Forwarded-For $remote_addr;
     location /calibre/ {
