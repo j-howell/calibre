@@ -24,6 +24,7 @@
 #include <codecvt>
 #include <frozen/unordered_map.h>
 #include <frozen/string.h>
+#include "../utils/cpp_binding.h"
 
 // character classes {{{
 static inline bool
@@ -76,25 +77,6 @@ is_printable_ascii(char32_t ch) {
 class python_error : public std::runtime_error {
 	public:
 		python_error(const char *msg) : std::runtime_error(msg) {}
-};
-
-class pyobject_raii {
-	private:
-		PyObject *handle;
-		pyobject_raii( const pyobject_raii & ) ;
-		pyobject_raii & operator=( const pyobject_raii & ) ;
-
-	public:
-		pyobject_raii() : handle(NULL) {}
-		pyobject_raii(PyObject* h, bool incref=false) : handle(h) { if (incref && handle) Py_INCREF(handle); }
-
-		~pyobject_raii() { Py_CLEAR(handle); }
-
-		PyObject *ptr() { return handle; }
-		void set_ptr(PyObject *val) { handle = val; }
-		PyObject **address() { return &handle; }
-		explicit operator bool() const { return handle != NULL; }
-        PyObject *detach() { PyObject *ans = handle; handle = NULL; return ans; }
 };
 
 // Parse numbers {{{
@@ -260,7 +242,7 @@ class Token {
             out.push_back('\\');
             if (is_whitespace(ch) || is_hex_digit(ch)) {
                 char buf[8];
-                int num = std::snprintf(buf, sizeof(buf), "%x ", ch);
+                int num = std::snprintf(buf, sizeof(buf), "%x ", (unsigned int)ch);
                 if (num > 0) {
                     out.resize(out.size() + num);
                     for (int i = 0; i < num; i++) out[i + out.size() - num] = buf[i];
@@ -313,7 +295,7 @@ class Token {
 				text.reserve(16);
 			}
 
-        Token(const TokenType type, const char32_t ch, size_t out_pos) :
+        Token(const TokenType type, const char32_t ch, size_t out_pos = 0) :
 			type(type), text(), unit_at(0), out_pos(out_pos) {
 				text.reserve(16);
 				if (ch) text.push_back(ch);
@@ -391,6 +373,17 @@ class Token {
 			}
 		}
 
+		bool is_property_terminator() const {
+			switch(type) {
+				case TokenType::whitespace:
+					return text.size() > 0 && text.find_first_of('\n') != std::string::npos;
+				case TokenType::delimiter:
+					return text.size() == 1 && (text[0] == ';' || text[0] == '}');
+				default:
+					return false;
+			}
+		}
+
 		PyObject* get_text_as_python() const {
 			PyObject *ans = PyUnicode_FromKindAndData(PyUnicode_4BYTE_KIND, text.data(), text.size());
 			if (ans == NULL) throw python_error("Failed to convert token value to python unicode object");
@@ -412,6 +405,10 @@ class Token {
 
 		void erase_text_substring(size_t pos, size_t len) {
 			text.replace(pos, len, (size_t)0u, 0);
+		}
+
+		void prepend(const char32_t *src) {
+			text.insert(0, src);
 		}
 
 		void set_text(const PyObject* src) {
@@ -602,9 +599,21 @@ class TokenQueue {
 							case PropertyType::font_size:
 								process_values = std::bind(&TokenQueue::process_font_sizes, this, std::placeholders::_1);
 								break;
-							case PropertyType::page_break:
+							case PropertyType::page_break: {
 								it->erase_text_substring(0, 5);
+								size_t pos = std::distance(queue.begin(), it);
+								std::vector<Token> copies;
+								copies.reserve(queue.size() + 2);
+								while (it < queue.end() && !it->is_property_terminator()) { copies.push_back(*(it++)); }
+								if (copies.size()) {
+									copies.emplace_back(TokenType::delimiter, ';');
+									copies.emplace_back(TokenType::whitespace, ' ');
+									queue.insert(queue.begin() + pos, std::make_move_iterator(copies.begin()), std::make_move_iterator(copies.end()));
+									size_t idx = pos + copies.size();
+									queue[idx].prepend(U"-webkit-column-");
+								}
 								changed = true; keep_going = false;
+							}
 								break;
 							case PropertyType::non_standard_writing_mode:
 								it->set_text(U"writing-mode");
@@ -643,9 +652,10 @@ class TokenQueue {
 		}
 
     public:
-        TokenQueue(const size_t src_sz, PyObject *url_callback=NULL) :
-			pool(), queue(), out(), scratch(), scratch2(), url_callback(url_callback, true) {
+        TokenQueue(const size_t src_sz, PyObject *url_callback_pointer=NULL) :
+			pool(), queue(), out(), scratch(), scratch2(), url_callback(url_callback_pointer) {
 				out.reserve(src_sz * 2); scratch.reserve(16); scratch2.reserve(16);
+				Py_XINCREF(url_callback.ptr());
 			}
 
 		void rewind_output() { out.pop_back(); }

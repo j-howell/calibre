@@ -13,7 +13,7 @@ The calibre template language is a calibre-specific language used throughout cal
 
 The language is built around the notion of a `template`, which specifies which book metadata to use, computations on that metadata, and how it is to be formatted.
 
-Basic Templates
+Basic templates
 ---------------
 
 A basic template consists one or more ``template expressions``. A ``template expression`` consists of text and names in curly brackets (``{}``) that is replaced by the corresponding metadata from the book being processed. For example, the default template in calibre used for saving books to device has 4 ``template expressions``::
@@ -218,7 +218,7 @@ General Program Mode
     and_expression  ::= not_expression [ '&&' not_expression ]*
     not_expression  ::= [ '!' not_expression ]* | compare_exp
     compare_expr    ::= add_sub_expr [ compare_op add_sub_expr ]
-    compare_op      ::= '==' | '!=' | '>=' | '>' | '<=' | '<' | 'in' |
+    compare_op      ::= '==' | '!=' | '>=' | '>' | '<=' | '<' | 'in' | 'inlist' |
                         '==#' | '!=#' | '>=#' | '>#' | '<=#' | '<#'
     add_sub_expr    ::= times_div_expr [ add_sub_op times_div_expr ]*
     add_sub_op      ::= '+' | '-'
@@ -226,7 +226,8 @@ General Program Mode
     times_div_op    ::= '*' | '/'
     unary_op_expr   ::= [ add_sub_op unary_op_expr ]* | expression
     expression      ::= identifier | constant | function | assignment | field_reference |
-                        if_expression | for_expression | '(' expression_list ')'
+                        if_expr | for_expr | break_expr | continue_expr |
+                        '(' expression_list ')'
     field_reference ::= '$' [ '$' ] [ '#' ] identifier
     identifier      ::= id_start [ id_rest ]*
     id_start        ::= letter | underscore
@@ -234,13 +235,15 @@ General Program Mode
     constant        ::= " string " | ' string ' | number
     function        ::= identifier '(' expression_list [ ',' expression_list ]* ')'
     assignment      ::= identifier '=' top_expression
-    if_expression   ::= 'if' condition 'then' expression_list
-                        [ elif_expression ] [ 'else' expression_list ] 'fi'
+    if_expr         ::= 'if' condition 'then' expression_list
+                        [ elif_expr ] [ 'else' expression_list ] 'fi'
     condition       ::= top_expression
-    elif_expression ::= 'elif' condition 'then' expression_list elif_expression | ''
-    for_expression  ::= 'for' identifier 'in' list_expression
+    elif_expr       ::= 'elif' condition 'then' expression_list elif_expr | ''
+    for_expr        ::= 'for' identifier 'in' list_expr
                         [ 'separator' separator_expr ] ':' expression_list 'rof'
-    list_expression ::= top_expression
+    list_expr       ::= top_expression
+    break_expr      ::= 'break'
+    continue_expr   ::= 'continue'
     separator_expr  ::= top_expression
 
 Notes:
@@ -251,7 +254,7 @@ Notes:
 * Strings and numbers can be used interchangeably. For example, ``10`` and ``'10'`` are the same thing.
 * Comments are lines starting with a '#' character. Comments beginning later in a line are not supported.
 
-**Operator Precedence**
+**Operator precedence**
 
 The operator precedence (order of evaluation) from highest (evaluated first) to lowest (evaluated last) is:
 
@@ -266,7 +269,7 @@ The operator precedence (order of evaluation) from highest (evaluated first) to 
 * Logical and (``&&``). This operator returns '1' if both the left-hand and right-hand expressions are True, or the empty string ``''`` if either is False. It is associative, evaluates left to right, and does `short-circuiting <https://chortle.ccsu.edu/java5/Notes/chap40/ch40_2.html>`_.
 * Logical or (``||``). This operator returns ``'1'`` if either the left-hand or right-hand expression is True, or ``''`` if both are False. It is associative, evaluates left to right, and does `short-circuiting <https://chortle.ccsu.edu/java5/Notes/chap40/ch40_2.html>`_. It is an `inclusive or`, returning ``'1'`` if both the left- and right-hand expressions are True.
 
-**Field References**
+**Field references**
 
 A ``field_reference`` evaluates to the value of the metadata field named by lookup name that follows the ``$`` or ``$$``. Using ``$`` is equivalent to using the ``field()`` function. Using ``$$`` is equivalent to using the ``raw_field`` function. Examples::
 
@@ -275,7 +278,7 @@ A ``field_reference`` evaluates to the value of the metadata field named by look
 * $$pubdate ==> raw_field('pubdate')
 * $$#my_int ==> raw_field('#my_int')
 
-**If Expressions**
+**If expressions**
 
 ``If`` expressions first evaluate the ``condition``. If the ``condition`` is True (a non-empty value) then the ``expression_list`` in the ``then`` clause is evaluated. If it is False then if present the ``expression_list`` in the ``elif`` or ``else`` clause is evaluated. The ``elif`` and ``else`` parts are optional. The words ``if``, ``then``, ``elif``, ``else``, and ``fi`` are reserved; you cannot use them as identifier names. You can put newlines and white space wherever they make sense. The ``condition`` is a ``top_expression`` not an ``expression_list``; semicolons are not allowed. The ``expression_lists`` are semicolon-separated sequences of ``top_expressions``. An ``if`` expression returns the result of the last ``top_expression`` in the evaluated ``expression_list``, or the empty string if no expression list was evaluated.
 
@@ -315,9 +318,9 @@ As a last example, this program returns the value of the ``series`` column if th
 
     program: field(if field('series') then 'series' else 'title' fi)
 
-**For Expressions**
+**For expressions**
 
-The ``for`` expression iterates over a list of values, processing them one at a time. The ``list_expression`` must evaluate to either a metadata field ``lookup name``, for example ``tags`` or ``#genre``, or a list of values. If the result is a valid ``lookup name`` then the field's value is fetched and the separator specified for that field type is used. If the result isn't a valid lookup name then it is assumed to be a list of values. The list is assumed to be separated by commas unless the optional keyword ``separator`` is supplied, in which case the list values must be separated by the result of evaluating the ``separator_expr``. Each value in the list is assigned to the specified variable then the ``expression_list`` is evaluated.
+The ``for`` expression iterates over a list of values, processing them one at a time. The ``list_expression`` must evaluate to either a metadata field ``lookup name``, for example ``tags`` or ``#genre``, or a list of values. If the result is a valid ``lookup name`` then the field's value is fetched and the separator specified for that field type is used. If the result isn't a valid lookup name then it is assumed to be a list of values. The list is assumed to be separated by commas unless the optional keyword ``separator`` is supplied, in which case the list values must be separated by the result of evaluating the ``separator_expr``. Each value in the list is assigned to the specified variable then the ``expression_list`` is evaluated. You can use ``break`` to jump out of the loop, and ``continue`` to jump to the beginning of the loop for the next iteration.
 
 Example: This template removes the first hierarchical name for each value in Genre (``#genre``), constructing a list with the new names::
 
@@ -334,14 +337,14 @@ If the original Genre is `History.Military, Science Fiction.Alternate History, R
 
 Note: the last line in the template, ``new_tags``, isn't strictly necessary in this case because ``for`` returns the value of the last top_expression in the expression list. The value of an assignment is the value of its expression, so the value of the ``for`` statement is what was assigned to ``new_tags``.
 
-**Relational Operators**
+**Relational operators**
 
 Relational operators return ``'1'`` if the comparison is true, otherwise the empty string ('').
 
 There are two forms of relational operators: string comparisons and numeric comparisons.
 
-String comparisons do case-insensitive string comparison using lexical order. The supported string comparison operators are ``==``, ``!=``, ``<``, ``<=``, ``>``, ``>=``, and ``in``.
-For the ``in`` operator, the result of the left hand expression is interpreted as a regular expression pattern. The ``in`` operator is True if the value of left-hand expression interpreted as a regular expression matches the value of the right hand expression. The match is case-insensitive.
+String comparisons do case-insensitive string comparison using lexical order. The supported string comparison operators are ``==``, ``!=``, ``<``, ``<=``, ``>``, ``>=``, ``in``, and ``inlist``.
+For the ``in`` operator, the result of the left hand expression is interpreted as a regular expression pattern. The ``in`` operator is True if the value of left-hand regular expression matches the value of the right hand expression. The ``inlist`` operator is true if the left hand regular expression matches any one of the items in the right hand list where the items in the list are separated by commas. The matches are case-insensitive.
 
 The numeric comparison operators are ``==#``, ``!=#``, ``<#``, ``<=#``, ``>#``, ``>=#``. The left and right expressions must evaluate to numeric values with two exceptions: both the string value "None" (undefined field) and the empty string evaluate to the value zero.
 
@@ -349,13 +352,15 @@ Examples:
 
   * ``program: field('series') == 'foo'`` returns ``'1'`` if the book's series is 'foo', otherwise ``''``.
   * ``program: 'f.o' in field('series')`` returns ``'1'`` if the book's series matches the regular expression ``f.o`` (e.g., `foo`, `Off Onyx`, etc.), otherwise ``''``.
+  * ``program: 'science' inlist field('#genre')`` returns ``'1'`` if any of the book's genres match the regular expression ``science``, e.g., `Science`, `History of Science`, `Science Fiction` etc.), otherwise ``''``.
+  * ``program: '^science$' inlist field('#genre')`` returns ``'1'`` if any of the book's genres exactly match the regular expression ``^science$``, e.g., `Science`. The genres `History of Science` and `Science Fiction` don't match. If there isn't a match then returns ``''``.
   * ``program: if field('series') != 'foo' then 'bar' else 'mumble' fi`` returns ``'bar'`` if the book's series is not ``foo``. Otherwise it returns ``'mumble'``.
   * ``program: if field('series') == 'foo' || field('series') == '1632' then 'yes' else 'no' fi`` returns ``'yes'`` if series is either ``'foo'`` or ``'1632'``, otherwise ``'no'``.
   * ``program: if '^(foo|1632)$' in field('series') then 'yes' else 'no' fi`` returns ``'yes'`` if series is either ``'foo'`` or ``'1632'``, otherwise ``'no'``.
   * ``program: if 11 > 2 then 'yes' else 'no' fi`` returns ``'no'`` because the ``>`` operator does a lexical comparison.
   * ``program: if 11 ># 2 then 'yes' else 'no' fi`` returns ``'yes'`` because the ``>#`` operator does a numeric comparison.
 
-**Additional Available Functions**
+**Additional available functions**
 
 The following functions are available in addition to those described in :ref:`Single Function Mode <single_mode>`.
 
@@ -378,6 +383,7 @@ In `GPM` the functions described in `Single Function Mode` all require an additi
 
   More than one of ``is_undefined``, ``is_false``, or ``is_true`` can be set to 1.
 * ``ceiling(x)`` -- returns the smallest integer greater than or equal to ``x``. Throws an exception if ``x`` is not a number.
+* ``character(character_name)`` -- returns the character named by character_name. For example, ``character('newline')`` returns a newline character (``'\n'``). The supported character names are ``newline``, ``return``, ``tab``, and ``backslash``.
 * ``cmp(x, y, lt, eq, gt)`` -- compares ``x`` and ``y`` after converting both to numbers. Returns ``lt`` if ``x <# y``, ``eq`` if ``x ==# y``, otherwise ``gt``. This function can usually be replaced with one of the numeric compare operators (``==#``, ``<#``, ``>#``, etc).
 * ``connected_device_name(storage_location_key)`` -- if a device is connected then return the device name, otherwise return the empty string. Each storage location on a device has its own device name. The ``storage_location_key`` names are ``'main'``, ``'carda'`` and ``'cardb'``. This function works only in the GUI.
 * ``connected_device_uuid(storage_location_key)`` -- if a device is connected then return the device uuid (unique id), otherwise return the empty string. Each storage location on a device has a different uuid. The ``storage_location_key`` location names are ``'main'``, ``'carda'`` and ``'cardb'``. This function works only in the GUI.
@@ -469,7 +475,7 @@ In `GPM` the functions described in `Single Function Mode` all require an additi
 
     var_0 = 'one';
     var_1 = 'two';
-    var_3 = 'foo
+    var_2 = 'foo
 
 * ``list_union(list1, list2, separator)`` -- return a list made by merging the items in ``list1`` and ``list2``, removing duplicate items using a case-insensitive comparison. If items differ in case, the one in ``list1`` is used. The items in ``list1`` and ``list2`` are separated by ``separator``, as are the items in the returned list. Aliases: ``merge_lists()``, ``list_union()``
 * ``mod(x, y)`` -- returns the ``floor`` of the remainder of ``x / y``. Throws an exception if either ``x`` or ``y`` is not a number.
@@ -524,7 +530,7 @@ In `TPM`, using ``{`` and ``}`` characters in string literals can lead to errors
 
 As with `General Program Mode`, for functions documented under :ref:`Single Function Mode <single_mode>` you must supply the value the function is to act upon as the first parameter in addition to the documented parameters. In `TPM` you can use ``$`` to access the value specified by the ``lookup name`` for the template expression.
 
-Stored General Program Mode Templates
+Stored general program mode templates
 ----------------------------------------
 
 :ref:`General Program Mode <general_mode>` supports saving templates and calling those templates from another template, much like calling stored functions. You save templates using :guilabel:`Preferences->Advanced->Template functions`. More information is provided in that dialog. You call a template the same way you call a function, passing positional arguments if desired. An argument can be any expression. Examples of calling a template, assuming the stored template is named ``foo``:

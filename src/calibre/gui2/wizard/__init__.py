@@ -316,6 +316,27 @@ class PocketBookPro912(PocketBook):
     output_profile = 'pocketbook_pro_912'
 
 
+class PocketBookLux(PocketBook):
+
+    untranslated_name, name = gettext('PocketBook Lux (1-5) and Basic 4')
+    id = 'pocketbooklux'
+    short_name = 'pocketbook_lux'
+
+
+class PocketBookHD(PocketBook):
+
+    name = 'PocketBook PocketBook HD Touch (1-3)'
+    id = 'pocketbookhd'
+    short_name = 'pocketbook_hd'
+
+
+class PocketBookInkpad3(PocketBook):
+
+    untranslated_name, name = gettext('PocketBook Inkpad 3 (Pro) and X')
+    id = 'pocketbookinkpad3'
+    short_name = 'pocketbook_inkpad3'
+
+
 class iPhone(Device):
 
     name = 'iPhone/iPad/iPod Touch'
@@ -766,7 +787,7 @@ class LibraryPage(QWizardPage, LibraryUI):
         if x:
             if (iswindows and len(x) > LibraryDatabase.WINDOWS_LIBRARY_PATH_LIMIT):
                 return error_dialog(self, _('Too long'),
-                    _('Path to library too long. Must be less than'
+                    _('Path to library too long. It must be less than'
                     ' %d characters.')%(LibraryDatabase.WINDOWS_LIBRARY_PATH_LIMIT),
                     show=True)
             if not os.path.exists(x):

@@ -23,6 +23,163 @@
 # - title by author
 # }}}
 
+{{{ 5.17.0 2021-04-30
+
+:: new features
+
+- [1926484] E-book viewer: Image popup: Allow dragging with the mouse to pan the image
+
+- [1923724] Sort button: Allow selecting which columns are in the popup sort menu
+
+- [1851908] E-book viewer: When suggesting a default bookmark title, use the name of the current chapter
+
+- [1925038] E-book viewer: When searching the Table of Contents allow holding the Shift key to search backwards
+
+- [1925294] E-book viewer: Add a shortcut Ctrl+0 to restore default font size
+
+:: bug fixes
+
+- Windows MTP driver: Rewrite parts of the driver in the hope of fixing some rare and hard to reproduce crashes
+
+- Windows MTP driver: Set modified and created times when putting files/folders on device. Also read modified time correctly.
+
+- [1918591] Windows: E-book viewer: Fix switching away from viewer while in full screen and switching back causing some corruption until the page is scrolled
+
+- [1925378] Fix a regression in the previous release that caused errors when editing empty date values
+
+- Get books: Update Gutenberg plugin for website changes
+
+- [1926518] E-book viewer: The quick highlight button should replace the style of an existing highlight, when one is selected
+
+- [1925247] Elide long items in the middle when showing the completion popup for tags, to make it easier to use with hierarchical tags
+
+- [1925988] E-book viewer: Read aloud: Fix soft hyphens causing read aloud words to be broken up
+
+- [1925390] E-book viewer: Right clicking when text is selected should extend the selection instead of doing nothing
+
+- Fix settings in the ToC Editor tool being forgotten when calibre is closed
+
+- [1926025] DOCX Output: Fix conversion failing if the input document has missing images
+
+- [1925961] Content server viewer: Fix mouse wheel scrolling not working on the box used to edit notes for highlights
+
+- E-book viewer: Fix read aloud word tracking in flow mode not very reliable
+
+- E-book viewer: Fix navigation shortcuts not working in Read aloud mode
+
+:: improved recipes
+- Barrons
+- Krebs On Security
+
+}}}
+
+{{{ 5.16.1 2021-04-17
+
+:: new features
+
+:: bug fixes
+
+- [1924703] CHM Input: Fix handling of some CHM files that use non-ASCII internal filenames and dont specify a character encoding in their metadata
+
+- [1924824] Fix a regression in the previous release that prevented calibre from starting if there was a failure in a third party plugin
+
+- Content server viewer: Fix a regression in the previous that broke handling of URLs in stylesheets
+
+- [1924767] Fix a regression in the previous release that broke changing sections in the convert single book dialog after changing the input or output formats
+
+- [1924675] Fix using 'is set' rules not working for column rules with rating values
+
+- E-book viewer: Fix a regression in 5.15 that causes the viewer to ignore page-break CSS properties (in 5.16.1)
+
+- Fix a regression that broke using stored templates (in 5.16.1)
+
+- [1924875] Fix auto scroll books shortcut not working in standalone cover browser window (in 5.16.1)
+
+- [1924890] E-book viewer: Fix jumping to previous section sometimes not working in flow mode (in 5.16.1)
+
+- [1924853] E-book viewer: Fix a regression in 5.15 that broke changing keyboard shortcuts in the viewer preferences (in 5.16.1)
+
+- E-book viewer: Fix a regression in 5.15 that broke using the delete key to delete highlights (in 5.16.1)
+
+:: improved recipes
+- Granta
+- New Scientist
+
+:: new recipes
+- The Saturday paper by Alistair Francis
+- Crikey by Alistair Francis
+
+}}}
+
+{{{ 5.15.0 2021-04-16
+
+:: new features
+
+- [1917634] Allow auto scrolling through the list of books by pressing the X key or right clicking on the cover browser
+
+Useful to have a "slideshow" of book covers. The speed of scrolling can be controlled in Preferences->Look & feel->Cover browser
+
+- E-book viewer: Speed up first time open for EPUB files with lots of styling
+
+- E-book viewer preferences: Allow searching for keyboard shortcuts
+
+- Edit book: Allow editing WEBP images
+
+- Various improvements to the template language, see https://www.mobileread.com/forums/showthread.php?t=337573
+
+- [1921610] E-book viewer: Show the current progress percentage in the bottom bar of the viewer controls. This can be customized in the viewer preferences under Headers and footers
+
+- [1921689] E-book viewer: Add an option under Preferences->Miscellaneous to not restore open panels such as Search, Table of Contents etc on restart
+
+- When exporting highlights as text or markdown also output top level chapter titles
+
+- [1922327] Allow downloading metadata from amazon.se
+
+- [1922591] Preferences->Tweaks: Allow specifying that calibre should open the book details window when double clicking on a book
+
+- [1922341] MOBI Output: Convert WebP images to PNG so they work with Amazon's software
+
+- [1921793] DOCX Input: When converting embedded fonts, replace spaces in the filename with underscores to keep the execrable epubcheck happy
+
+- E-book viewer: Selection bar: Add keyboard shortcuts for all buttons. Hover over a button in the bar to see the shortcut
+
+
+:: bug fixes
+
+- [1924232] FB2 Output: Fix a regression in calibre 5 that caused paragraphs containing only non-breaking spaces to be removed
+
+- [1924187] Metadata comments editor: Fix setting block alignment destroying other block level properties
+
+- E-book viewer: Fix margins not being adjusted immediately when preferences are changed
+
+- [1921604] Edit book: Upgrade book internals: Fix skipping the NCX removal dialog not remembering the chosen option
+
+- [1922570] Conversion: When specifying a line-height do not apply it to the <html> tag, as it is pointless and causes the execrable epubcheck to complain
+
+- E-book viewer: Improve scrolling behavior when extending the selection using keyboard shortcuts
+
+- E-book viewer: Fix read percent for HTML files that are rendered in a single screen being 0% rather than 100%
+
+- [1924598] E-book viewer: Highlights panel: Do not expand all sections when adding/deleting/modifying highlights
+
+- [1922503] CHM Input: Fix a regression in calibre 5.0 that broke opening of some files that dont specify a character encoding
+
+- EPUB2 metadata: Read ISBNs in identifier elements without schemes if they are valid ISBNs and no properly identified isbns are present
+
+- [1922309] Update Amazon metadata plugin for changes to amazon websites
+
+- Edit book: Fix detection of class names containing hyphens/underscores
+
+:: improved recipes
+- New Scientist
+- Irish Times
+- 1843
+- The Straits Times
+
+:: new recipes
+- Los Danieles – Columnas sin techo by CAVALENCIA
+}}}
+
 {{{ 5.14.0 2021-03-26
 
 :: new features
@@ -35,11 +192,11 @@
 
 - [1918047] Content server: Allow swiping left and right to show next/previous book on the book details page
 
-- [1919072] E-book viewer: Make the commonly used shift+arrow key shortcuts for modifying selections using the keyboard work. Also add shortcuts for selecting by character, line and paragraph.
+- [1919072] E-book viewer: Make the commonly used Shift+Arrow key shortcuts for modifying selections using the keyboard work. Also add shortcuts for selecting by character, line and paragraph.
 
 :: bug fixes
 
-- [1920613] MOBI Output: Fix latest kindle firmware not displaying select publisher font option for calibre produced azw3 files
+- [1920613] MOBI Output: Fix latest Kindle firmware not displaying select publisher font option for calibre produced AZW3 files
 
 - [1919033] E-book viewer: Fix errors when viewing books with mathematics that are split over multiple internal files
 
@@ -59,7 +216,7 @@
 
 - [1918437] E-book viewer: Fix incorrect ToC navigation in books that link the entries to inline tags that wrap block tags that span multiple pages
 
-- [1920592] Category editor: Searching in library shouldn't automatically opens Quickview
+- [1920592] Category editor: Searching in library shouldn't automatically open Quickview
 
 - [1919260] Conversion: Fix a hang caused by long sequences of non-word characters when heuristics are enabled, either explicitly or for some input formats such as TXT
 
@@ -75,7 +232,7 @@
 
 :: new features
 
-- [1917967] E-book Viewer: Allow editing the current book by pressing Ctrl+d or adding a button for it to the viewer tool bar
+- [1917967] E-book Viewer: Allow editing the current book by pressing Ctrl+D or adding a button for it to the viewer tool bar
 
 - Edit book: Add a command line flag to allow selecting the specified text when opening a book
 
@@ -1260,7 +1417,7 @@ For books sent with this release of calibre, reconnecting the Kindle to calibre 
 
 - [1863438] Viewer: Fix current reading position not preserved when changing preferences and auto scroll is active.
 
-- [1863487] Viewer: Fix stopping autoscroll at end of chapter not stopping next chapter jump.
+- [1863487] Viewer: Fix stopping auto scroll at end of chapter not stopping next chapter jump.
 
 - Fix for viewer window going off screen even when not restoring window geometry
 
@@ -1301,7 +1458,7 @@ For books sent with this release of calibre, reconnecting the Kindle to calibre 
 
 - Catalog generation: Ignore invalid pubdates
 
-- [1861621] Viewer: Stop autoscroll when changing page layout mode.
+- [1861621] Viewer: Stop auto scroll when changing page layout mode.
 
 - [1860889] zipfile: Fix regression that broke handling of zipfiles with internal filenames not encoded in UTF-8.
 

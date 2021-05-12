@@ -547,7 +547,7 @@ Using images as chapter titles when converting HTML input documents
 ---------------------------------------------------------------------
 
 Suppose you want to use an image as your chapter title, but still want calibre to be able to automatically generate a Table of Contents for you from the chapter titles.
-Use the following HTML markup to achieve this
+Use the following HTML markup to achieve this:
 
 .. code-block:: html
 
@@ -586,7 +586,7 @@ instead of using the text inside the tag. Note the trailing ``/@title`` on the
 XPath expression, you can use this form to tell calibre to get the text from any
 attribute you like.
 
-How options are set/saved for Conversion
+How options are set/saved for conversion
 -------------------------------------------
 
 There are two places where conversion options can be set in calibre. The first is
@@ -838,7 +838,7 @@ to another standard page size or a completely custom size in the :guilabel:`PDF 
 section of the conversion dialog. If you are generating a PDF to be used on a
 specific device, you can turn on the option to use the page size from the
 :guilabel:`output profile` instead. So if your output profile is set to Kindle, calibre
-will create a PDF with page size suitable for viewing on the small kindle
+will create a PDF with page size suitable for viewing on the small Kindle
 screen.
 
 Headers and Footers

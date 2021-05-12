@@ -114,6 +114,28 @@ class AnnotsResultsDelegate(ResultsDelegate):
 # }}}
 
 
+def sorted_items(items):
+    from calibre.ebooks.epub.cfi.parse import cfi_sort_key
+    def_spine = 999999999
+    defval = cfi_sort_key(f'/{def_spine}')
+
+    def sort_key(x):
+        x = x['annotation']
+        atype = x['type']
+        if atype == 'highlight':
+            cfi = x.get('start_cfi')
+            if cfi:
+                spine_idx = x.get('spine_index', def_spine)
+                cfi = f'/{spine_idx}/{cfi}'
+                return cfi_sort_key(cfi, only_path=False)
+        elif atype == 'bookmark':
+            if x.get('pos_type') == 'epubcfi':
+                return cfi_sort_key(x['pos'], only_path=False)
+        return defval
+
+    return sorted(items, key=sort_key)
+
+
 class Export(Dialog):  # {{{
 
     prefs = gprefs
@@ -187,18 +209,29 @@ class Export(Dialog):  # {{{
         for a in self.annotations:
             bid_groups.setdefault(a['book_id'], []).append(a)
         for book_id, group in bid_groups.items():
+            chapter_groups = {}
+            def_chap = (_('Unknown chapter'),)
+            for a in group:
+                toc_titles = a.get('toc_family_titles', def_chap)
+                chapter_groups.setdefault(toc_titles[0], []).append(a)
+
             lines.append('## ' + db.field_for('title', book_id))
             lines.append('')
-            for a in group:
-                atype = a['type']
-                if library_id:
-                    link_prefix = f'calibre://view-book/{library_id}/{book_id}/{a["format"]}?open_at='
-                else:
-                    link_prefix = None
-                if atype == 'highlight':
-                    render_highlight_as_text(a, lines, as_markdown=as_markdown, link_prefix=link_prefix)
-                elif atype == 'bookmark':
-                    render_bookmark_as_text(a, lines, as_markdown=as_markdown, link_prefix=link_prefix)
+
+            for chapter, group in chapter_groups.items():
+                if len(chapter_groups) > 1:
+                    lines.append('### ' + chapter)
+                    lines.append('')
+                for a in group:
+                    atype = a['type']
+                    if library_id:
+                        link_prefix = f'calibre://view-book/{library_id}/{book_id}/{a["format"]}?open_at='
+                    else:
+                        link_prefix = None
+                    if atype == 'highlight':
+                        render_highlight_as_text(a, lines, as_markdown=as_markdown, link_prefix=link_prefix)
+                    elif atype == 'bookmark':
+                        render_bookmark_as_text(a, lines, as_markdown=as_markdown, link_prefix=link_prefix)
             lines.append('')
         return '\n'.join(lines).strip()
 # }}}
@@ -295,9 +328,10 @@ class ResultsList(QTreeWidget):
             section = QTreeWidgetItem([entry['title']], 1)
             section.setFlags(Qt.ItemFlag.ItemIsEnabled)
             section.setFont(0, self.section_font)
+            section.setData(0, Qt.ItemDataRole.UserRole, book_id)
             self.addTopLevelItem(section)
             section.setExpanded(True)
-            for result in entry['matches']:
+            for result in sorted_items(entry['matches']):
                 item = QTreeWidgetItem(section, [' '], 2)
                 self.item_map.append(item)
                 item.setFlags(Qt.ItemFlag.ItemIsSelectable | Qt.ItemFlag.ItemIsEnabled | Qt.ItemFlag.ItemNeverHasChildren)
@@ -343,7 +377,38 @@ class ResultsList(QTreeWidget):
             self.delete_requested.emit()
             ev.accept()
             return
+        if ev.key() == Qt.Key.Key_F2:
+            item = self.currentItem()
+            if item:
+                self.edit_notes(item)
+                ev.accept()
+                return
         return QTreeWidget.keyPressEvent(self, ev)
+
+    @property
+    def tree_state(self):
+        ans = {'closed': set()}
+        item = self.currentItem()
+        if item is not None:
+            ans['current'] = item.data(0, Qt.ItemDataRole.UserRole)
+        for item in (self.topLevelItem(i) for i in range(self.topLevelItemCount())):
+            if not item.isExpanded():
+                ans['closed'].add(item.data(0, Qt.ItemDataRole.UserRole))
+        return ans
+
+    @tree_state.setter
+    def tree_state(self, state):
+        closed = state['closed']
+        for item in (self.topLevelItem(i) for i in range(self.topLevelItemCount())):
+            if item.data(0, Qt.ItemDataRole.UserRole) in closed:
+                item.setExpanded(False)
+
+        cur = state.get('current')
+        if cur is not None:
+            for item in self.item_map:
+                if item.data(0, Qt.ItemDataRole.UserRole) == cur:
+                    self.setCurrentItem(item)
+                    break
 
 
 class Restrictions(QWidget):
@@ -595,6 +660,12 @@ class BrowsePanel(QWidget):
     def selected_annotations(self):
         return self.results_list.selected_annotations
 
+    def save_tree_state(self):
+        return self.results_list.tree_state
+
+    def restore_tree_state(self, state):
+        self.results_list.tree_state = state
+
 
 class Details(QTextBrowser):
 
@@ -731,7 +802,8 @@ class EditNotes(Dialog):
 
     def __init__(self, notes, parent=None):
         self.initial_notes = notes
-        Dialog.__init__(self, _('Edit notes for highlight'), 'library-annotations-browser-edit-notes', parent=parent)
+        Dialog.__init__(
+            self, _('Edit notes for highlight'), 'library-annotations-browser-edit-notes', parent=parent)
 
     def setup_ui(self):
         self.notes_edit = QPlainTextEdit(self)
@@ -754,7 +826,8 @@ class AnnotationsBrowser(Dialog):
     show_book = pyqtSignal(object, object)
 
     def __init__(self, parent=None):
-        Dialog.__init__(self, _('Annotations browser'), 'library-annotations-browser', parent=parent)
+        self.current_restriction = None
+        Dialog.__init__(self, _('Annotations browser'), 'library-annotations-browser', parent=parent, default_buttons=QDialogButtonBox.StandardButton.Close)
         self.setAttribute(Qt.WidgetAttribute.WA_DeleteOnClose, False)
         self.setWindowIcon(QIcon(I('highlight.png')))
 
@@ -812,6 +885,10 @@ class AnnotationsBrowser(Dialog):
         b.setToolTip(_('Export the selected annotations'))
         b.setIcon(QIcon(I('save.png')))
         b.clicked.connect(self.export_selected)
+        self.refresh_button = b = self.bb.addButton(_('Refresh'), QDialogButtonBox.ButtonRole.ActionRole)
+        b.setToolTip(_('Refresh annotations in case they have been changed since this window was opened'))
+        b.setIcon(QIcon(I('restart.png')))
+        b.clicked.connect(self.refresh)
 
     def delete_selected(self):
         ids = frozenset(self.browse_panel.selected_annot_ids)
@@ -872,7 +949,14 @@ class AnnotationsBrowser(Dialog):
             self.browse_panel.selection_changed(gui.library_view.get_selected_ids(as_set=True))
 
     def reinitialize(self, restrict_to_book_ids=None):
+        self.current_restriction = restrict_to_book_ids
         self.browse_panel.re_initialize(restrict_to_book_ids or set())
+
+    def refresh(self, current_restriction):
+        state = self.browse_panel.save_tree_state()
+        self.browse_panel.re_initialize(self.current_restriction)
+        self.browse_panel.effective_query_changed()
+        self.browse_panel.restore_tree_state(state)
 
 
 if __name__ == '__main__':

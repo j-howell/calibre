@@ -28,6 +28,7 @@ from calibre import detect_ncpus, force_unicode, prints
 from calibre.constants import (
     DEBUG, __appname__, config_dir, filesystem_encoding, ismacos, iswindows
 )
+from calibre.customize import PluginInstallationType
 from calibre.customize.ui import available_store_plugins, interface_actions
 from calibre.db.legacy import LibraryDatabase
 from calibre.gui2 import (
@@ -127,7 +128,8 @@ class Main(MainWindow, MainWindowMixin, DeviceMixin, EmailMixin,  # {{{
         self.iactions = OrderedDict()
         # Actions
         for action in interface_actions():
-            if opts.ignore_plugins and action.plugin_path is not None:
+            if opts.ignore_plugins \
+                    and action.installation_type is not PluginInstallationType.BUILTIN:
                 continue
             try:
                 ac = self.init_iaction(action)
@@ -139,7 +141,7 @@ class Main(MainWindow, MainWindowMixin, DeviceMixin, EmailMixin,  # {{{
                 except Exception:
                     if action.plugin_path:
                         print('Failed to load Interface Action plugin:', action.plugin_path, file=sys.stderr)
-                if action.plugin_path is None:
+                if action.installation_type is PluginInstallationType.BUILTIN:
                     raise
                 continue
             ac.plugin_path = action.plugin_path
@@ -151,6 +153,7 @@ class Main(MainWindow, MainWindowMixin, DeviceMixin, EmailMixin,  # {{{
         ac = action.load_actual_plugin(self)
         ac.plugin_path = action.plugin_path
         ac.interface_action_base_plugin = action
+        ac.installation_type = action.installation_type
         action.actual_iaction_plugin_loaded = True
         return ac
 
@@ -166,7 +169,8 @@ class Main(MainWindow, MainWindowMixin, DeviceMixin, EmailMixin,  # {{{
         from calibre.gui2.store.loader import Stores
         self.istores = Stores()
         for store in available_store_plugins():
-            if self.opts.ignore_plugins and store.plugin_path is not None:
+            if self.opts.ignore_plugins \
+                    and store.installation_type is not PluginInstallationType.BUILTIN:
                 continue
             try:
                 st = self.init_istore(store)
@@ -175,7 +179,7 @@ class Main(MainWindow, MainWindowMixin, DeviceMixin, EmailMixin,  # {{{
                 # Ignore errors in loading user supplied plugins
                 import traceback
                 traceback.print_exc()
-                if store.plugin_path is None:
+                if store.installation_type is PluginInstallationType.BUILTIN:
                     raise
                 continue
         self.istores.builtins_loaded()
@@ -183,6 +187,7 @@ class Main(MainWindow, MainWindowMixin, DeviceMixin, EmailMixin,  # {{{
     def init_istore(self, store):
         st = store.load_actual_plugin(self)
         st.plugin_path = store.plugin_path
+        st.installation_type = store.installation_type
         st.base_plugin = store
         store.actual_istore_plugin_loaded = True
         return st
@@ -214,7 +219,7 @@ class Main(MainWindow, MainWindowMixin, DeviceMixin, EmailMixin,  # {{{
                 # Ignore errors in third party plugins
                 import traceback
                 traceback.print_exc()
-                if getattr(ac, 'plugin_path', None) is None:
+                if getattr(ac, 'installation_type', None) is PluginInstallationType.BUILTIN:
                     raise
         self.donate_action = QAction(QIcon(I('donate.png')),
                 _('&Donate to support calibre'), self)
@@ -369,7 +374,7 @@ class Main(MainWindow, MainWindowMixin, DeviceMixin, EmailMixin,  # {{{
             except:
                 import traceback
                 traceback.print_exc()
-                if ac.plugin_path is None:
+                if ac.installation_type is PluginInstallationType.BUILTIN:
                     raise
 
         if config['autolaunch_server']:
@@ -389,7 +394,7 @@ class Main(MainWindow, MainWindowMixin, DeviceMixin, EmailMixin,  # {{{
             except:
                 import traceback
                 traceback.print_exc()
-                if ac.plugin_path is None:
+                if ac.installation_type is PluginInstallationType.BUILTIN:
                     raise
         self.set_current_library_information(current_library_name(), db.library_id,
                                              db.field_metadata)
@@ -971,7 +976,7 @@ class Main(MainWindow, MainWindowMixin, DeviceMixin, EmailMixin,  # {{{
                 your e-book reader may have trouble with the EPUB.
                         ''')
                 if not minz:
-                    d = error_dialog(self, _('Conversion Failed'), msg,
+                    d = error_dialog(self, _('Conversion failed'), msg,
                             det_msg=job.details)
                     d.setModal(False)
                     d.show()

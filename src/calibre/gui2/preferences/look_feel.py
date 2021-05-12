@@ -118,6 +118,8 @@ class IdLinksRuleEdit(Dialog):
         title = _('Edit rule') if key else _('Create a new rule')
         Dialog.__init__(self, title=title, name='id-links-rule-editor', parent=parent)
         self.key.setText(key), self.nw.setText(name), self.template.setText(template or 'https://example.com/{id}')
+        if self.size().height() < self.sizeHint().height():
+            self.resize(self.sizeHint())
 
     @property
     def rule(self):
@@ -135,7 +137,10 @@ class IdLinksRuleEdit(Dialog):
         self.nw = n = QLineEdit(self)
         l.addRow(_('&Name:'), n)
         la = QLabel(_(
-            'The template used to create the link. The placeholder {id} in the template will be replaced with the actual identifier value.'))
+            'The template used to create the link.'
+            ' The placeholder {0} in the template will be replaced'
+            ' with the actual identifier value. Use {1} to avoid the value'
+            ' being quoted.').format('{id}', '{id_unquoted}'))
         la.setWordWrap(True)
         l.addRow(la)
         self.template = t = QLineEdit(self)
@@ -425,6 +430,7 @@ class ConfigWidget(ConfigWidgetBase, Ui_Form):
         r('cover_grid_show_title', gprefs)
         r('tag_browser_show_counts', gprefs)
         r('tag_browser_item_padding', gprefs)
+        r('books_autoscroll_time', gprefs)
 
         r('qv_respects_vls', gprefs)
         r('qv_dclick_changes_column', gprefs)
@@ -549,8 +555,8 @@ class ConfigWidget(ConfigWidgetBase, Ui_Form):
         keys = [QKeySequence('F11', QKeySequence.SequenceFormat.PortableText), QKeySequence(
             'Ctrl+Shift+F', QKeySequence.SequenceFormat.PortableText)]
         keys = [unicode_type(x.toString(QKeySequence.SequenceFormat.NativeText)) for x in keys]
-        self.fs_help_msg.setText(unicode_type(self.fs_help_msg.text())%(
-            _(' or ').join(keys)))
+        self.fs_help_msg.setText(self.fs_help_msg.text()%(
+            QKeySequence(QKeySequence.StandardKey.FullScreen).toString(QKeySequence.SequenceFormat.NativeText)))
         self.size_calculated.connect(self.update_cg_cache_size, type=Qt.ConnectionType.QueuedConnection)
         self.tabWidget.currentChanged.connect(self.tab_changed)
 
@@ -806,6 +812,7 @@ class ConfigWidget(ConfigWidgetBase, Ui_Form):
             getattr(gui, view + '_view').set_row_header_visibility()
         gui.library_view.refresh_row_sizing()
         gui.grid_view.refresh_settings()
+        gui.update_auto_scroll_timeout()
         qv = get_quickview_action_plugin()
         if qv:
             qv.refill_quickview()

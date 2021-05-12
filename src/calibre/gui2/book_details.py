@@ -76,7 +76,7 @@ def create_search_internet_menu(callback, author=None):
     m = QMenu((
         _('Search the internet for the author {}').format(author)
         if author is not None else
-        _('Search the internet for this book')) + '…'
+        _('Search the internet for this book'))
     )
     m.menuAction().setIcon(QIcon(I('search.png')))
     items = all_book_searches() if author is None else all_author_searches()
@@ -286,7 +286,7 @@ def add_format_entries(menu, data, book_info, copy_menu, search_menu):
             menu.ow = m
         if fmt.upper() in SUPPORTED:
             menu.addSeparator()
-            menu.addAction(_('Edit %s...') % fmt.upper(), partial(book_info.edit_fmt, book_id, fmt))
+            menu.addAction(_('Edit %s') % fmt.upper(), partial(book_info.edit_fmt, book_id, fmt))
     path = data['path']
     if path:
         if data.get('fname'):
@@ -304,7 +304,7 @@ def add_item_specific_entries(menu, data, book_info, copy_menu, search_menu):
     dt = data['type']
 
     def add_copy_action(name):
-        copy_menu.addAction(QIcon(I('edit-copy.png')), _('Copy {} to clipboard').format(name), lambda: QApplication.instance().clipboard().setText(name))
+        copy_menu.addAction(QIcon(I('edit-copy.png')), _('The text: {}').format(name), lambda: QApplication.instance().clipboard().setText(name))
 
     if dt == 'format':
         add_format_entries(menu, data, book_info, copy_menu, search_menu)
@@ -313,7 +313,7 @@ def add_item_specific_entries(menu, data, book_info, copy_menu, search_menu):
         if data['url'] != 'calibre':
             ac = book_info.copy_link_action
             ac.current_url = data['url']
-            ac.setText(_('&Copy author link'))
+            ac.setText(_('&Author link'))
             copy_menu.addAction(ac)
         add_copy_action(author)
         init_find_in_tag_browser(search_menu, find_action, 'authors', author)
@@ -338,7 +338,7 @@ def add_item_specific_entries(menu, data, book_info, copy_menu, search_menu):
         if isinstance(path, int):
             path = get_gui().library_view.model().db.abspath(path, index_is_id=True)
         ac.current_url = path
-        ac.setText(_('Copy path'))
+        ac.setText(_('The location of the book'))
         copy_menu.addAction(ac)
     else:
         field = data.get('field')
@@ -348,8 +348,11 @@ def add_item_specific_entries(menu, data, book_info, copy_menu, search_menu):
             if field == 'identifiers':
                 ac = book_info.copy_link_action
                 ac.current_url = value
-                ac.setText(_('&Copy identifier'))
+                ac.setText(_('&Identifier'))
                 copy_menu.addAction(ac)
+                if data.get('url'):
+                    book_info.copy_identifiers_url_action.current_url = data['url']
+                    copy_menu.addAction(book_info.copy_identifiers_url_action)
                 remove_value = data['id_type']
                 init_find_in_tag_browser(search_menu, find_action, field, remove_value)
                 init_find_in_grouped_search(search_menu, field, remove_value, book_info)
@@ -441,11 +444,11 @@ def details_context_menu_event(view, ev, book_info, add_popup_action=False, edit
         if not ac.isEnabled():
             menu.removeAction(ac)
     menu.addSeparator()
+    from calibre.gui2.ui import get_gui
     if add_popup_action:
-        ac = menu.addAction(_('Open the Book details window'))
-        ac.triggered.connect(book_info.show_book_info)
+        ema = get_gui().iactions['Show Book Details'].menuless_qaction
+        menu.addAction(_('Open the Book details window') + '\t' + ema.shortcut().toString(QKeySequence.SequenceFormat.NativeText), book_info.show_book_info)
     else:
-        from calibre.gui2.ui import get_gui
         ema = get_gui().iactions['Edit Metadata'].menuless_qaction
         menu.addAction(_('Open the Edit metadata window') + '\t' + ema.shortcut().toString(QKeySequence.SequenceFormat.NativeText), edit_metadata)
     if len(menu.actions()) > 0:
@@ -732,6 +735,9 @@ class BookInfo(HTMLDisplay):
         self.remove_item_action = ac = QAction(QIcon(I('minus.png')), '...', self)
         ac.data = (None, None, None)
         ac.triggered.connect(self.remove_item_triggered)
+        self.copy_identifiers_url_action = ac = QAction(QIcon(I('edit-copy.png')), _('Identifier &URL'), self)
+        ac.triggered.connect(self.copy_id_url_triggerred)
+        ac.current_url = ac.current_fmt = None
         self.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         self.setDefaultStyleSheet(css())
 
@@ -769,6 +775,10 @@ class BookInfo(HTMLDisplay):
 
     def copy_link_triggerred(self):
         self.context_action_triggered('copy_link')
+
+    def copy_id_url_triggerred(self):
+        if self.copy_identifiers_url_action.current_url:
+            self.copy_link.emit(self.copy_identifiers_url_action.current_url)
 
     def find_in_tag_browser_triggerred(self):
         if self.find_in_tag_browser_action.current_fmt:

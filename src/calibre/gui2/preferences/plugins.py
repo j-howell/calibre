@@ -9,11 +9,12 @@ __docformat__ = 'restructuredtext en'
 import textwrap, os
 from collections import OrderedDict
 
-from qt.core import (Qt, QModelIndex, QAbstractItemModel, QIcon,
+from qt.core import (Qt, QMenu, QModelIndex, QAbstractItemModel, QIcon,
         QBrush, QDialog, QItemSelectionModel, QAbstractItemView)
 
 from calibre.gui2.preferences import ConfigWidgetBase, test_widget
 from calibre.gui2.preferences.plugins_ui import Ui_Form
+from calibre.customize import PluginInstallationType
 from calibre.customize.ui import (initialized_plugins, is_disabled, enable_plugin,
                                  disable_plugin, plugin_customization, add_plugin,
                                  remove_plugin, NameConflict)
@@ -53,7 +54,7 @@ class PluginModel(QAbstractItemModel, AdaptSQP):  # {{{
     def populate(self):
         self._data = {}
         for plugin in initialized_plugins():
-            if (getattr(plugin, 'plugin_path', None) is None and self.show_only_user_plugins):
+            if (getattr(plugin, 'installation_type', None) is not PluginInstallationType.EXTERNAL and self.show_only_user_plugins):
                 continue
             if plugin.type not in self._data:
                 self._data[plugin.type] = [plugin]
@@ -211,6 +212,8 @@ class PluginModel(QAbstractItemModel, AdaptSQP):  # {{{
                     ans += _('\nCustomization: ')+c
                 if disabled:
                     ans += _('\n\nThis plugin has been disabled')
+                if plugin.installation_type is PluginInstallationType.SYSTEM:
+                    ans += _('\n\nThis plugin is installed system-wide and can not be managed from within calibre')
                 return (ans)
             if role == Qt.ItemDataRole.DecorationRole:
                 return self.disabled_icon if disabled else self.icon
@@ -247,6 +250,14 @@ class ConfigWidget(ConfigWidgetBase, Ui_Form):
         self.previous_button.clicked.connect(self.find_previous)
         self.changed_signal.connect(self.reload_store_plugins)
         self.user_installed_plugins.stateChanged.connect(self.show_user_installed_plugins)
+        self.plugin_view.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
+        self.plugin_view.customContextMenuRequested.connect(self.show_context_menu)
+
+    def show_context_menu(self, pos):
+        menu = QMenu(self)
+        menu.addAction(_('Expand all'), self.plugin_view.expandAll)
+        menu.addAction(_('Collapse all'), self.plugin_view.collapseAll)
+        menu.exec_(self.plugin_view.mapToGlobal(pos))
 
     def show_user_installed_plugins(self, state):
         self._plugin_model.toggle_shown_plugins(self.user_installed_plugins.isChecked())

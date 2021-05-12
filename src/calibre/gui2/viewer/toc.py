@@ -103,6 +103,16 @@ class TOCView(QTreeView):
                 break
             self.expand_tree(child)
 
+    def collapse_at_level(self, index):
+        item = self.model().itemFromIndex(index)
+        for x in self.model().items_at_depth(item.depth):
+            self.collapse(self.model().indexFromItem(x))
+
+    def expand_at_level(self, index):
+        item = self.model().itemFromIndex(index)
+        for x in self.model().items_at_depth(item.depth):
+            self.expand(self.model().indexFromItem(x))
+
     def context_menu(self, pos):
         index = self.indexAt(pos)
         m = QMenu(self)
@@ -112,7 +122,11 @@ class TOCView(QTreeView):
         m.addAction(_('Expand all items'), self.expandAll)
         m.addAction(_('Collapse all items'), self.collapseAll)
         m.addSeparator()
-        m.addAction(_('Copy table of contents to clipboard'), self.copy_to_clipboard)
+        if index.isValid():
+            m.addAction(_('Expand all items at the level of {}').format(index.data()), partial(self.expand_at_level, index))
+            m.addAction(_('Collapse all items at the level of {}').format(index.data()), partial(self.collapse_at_level, index))
+        m.addSeparator()
+        m.addAction(_('Copy Table of Contents to clipboard'), self.copy_to_clipboard)
         m.exec_(self.mapToGlobal(pos))
 
     def copy_to_clipboard(self):
@@ -148,7 +162,8 @@ class TOCSearch(QWidget):
     def do_search(self, text):
         if not text or not text.strip():
             return
-        index = self.toc_view.model().search(text)
+        delta = -1 if QApplication.instance().keyboardModifiers() & Qt.KeyboardModifier.ShiftModifier else 1
+        index = self.toc_view.model().search(text, delta=delta)
         if index.isValid():
             self.toc_view.scrollTo(index)
             self.toc_view.searched.emit(index)
@@ -160,7 +175,7 @@ class TOCSearch(QWidget):
 
 class TOCItem(QStandardItem):
 
-    def __init__(self, toc, depth, all_items, normal_font, emphasis_font, parent=None):
+    def __init__(self, toc, depth, all_items, normal_font, emphasis_font, depths, parent=None):
         text = toc.get('title') or ''
         self.href = (toc.get('dest') or '')
         if toc.get('frag'):
@@ -173,8 +188,10 @@ class TOCItem(QStandardItem):
         QStandardItem.__init__(self, text)
         all_items.append(self)
         self.normal_font, self.emphasis_font = normal_font, emphasis_font
-        for t in toc['children']:
-            self.appendRow(TOCItem(t, depth+1, all_items, normal_font, emphasis_font, parent=self))
+        if toc['children']:
+            depths.add(depth + 1)
+            for t in toc['children']:
+                self.appendRow(TOCItem(t, depth+1, all_items, normal_font, emphasis_font, depths, parent=self))
         self.setFlags(Qt.ItemFlag.ItemIsEnabled)
         self.is_current_search_result = False
         self.depth = depth
@@ -222,16 +239,22 @@ class TOC(QStandardItemModel):
         normal_font = QApplication.instance().font()
         emphasis_font = QFont(normal_font)
         emphasis_font.setBold(True), emphasis_font.setItalic(True)
+        self.depths = {0}
         if toc:
             for t in toc['children']:
-                self.appendRow(TOCItem(t, 0, depth_first, normal_font, emphasis_font))
+                self.appendRow(TOCItem(t, 0, depth_first, normal_font, emphasis_font, self.depths))
+        self.depths = tuple(sorted(self.depths))
         self.node_id_map = {x.node_id: x for x in self.all_items}
-        self.currently_viewed_entry = None
 
     def find_items(self, query):
         for item in self.all_items:
             text = item.text()
             if not query or (text and primary_contains(query, text)):
+                yield item
+
+    def items_at_depth(self, depth):
+        for item in self.all_items:
+            if item.depth == depth:
                 yield item
 
     def node_id_for_text(self, query):
@@ -244,15 +267,16 @@ class TOC(QStandardItemModel):
             if (exact and query == href) or (not exact and query in href):
                 return item.node_id
 
-    def search(self, query):
+    def search(self, query, delta=1):
         cq = self.current_query
         if cq['items'] and -1 < cq['index'] < len(cq['items']):
             cq['items'][cq['index']].set_current_search_result(False)
         if cq['text'] != query:
             items = tuple(self.find_items(query))
             cq.update({'text':query, 'items':items, 'index':-1})
-        if len(cq['items']) > 0:
-            cq['index'] = (cq['index'] + 1) % len(cq['items'])
+        num = len(cq['items'])
+        if num > 0:
+            cq['index'] = (cq['index'] + delta + num) % num
             item = cq['items'][cq['index']]
             item.set_current_search_result(True)
             index = self.indexFromItem(item)
@@ -281,6 +305,12 @@ class TOC(QStandardItemModel):
 
     def viewed_nodes(self):
         return tuple(node for node in self.all_items if node.is_being_viewed)
+
+    @property
+    def title_for_current_node(self):
+        for node in reversed(self.all_items):
+            if node.is_being_viewed:
+                return node.title
 
     @property
     def as_plain_text(self):

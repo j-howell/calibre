@@ -832,11 +832,10 @@ from calibre.ebooks.metadata.sources.google import GoogleBooks
 from calibre.ebooks.metadata.sources.amazon import Amazon
 from calibre.ebooks.metadata.sources.edelweiss import Edelweiss
 from calibre.ebooks.metadata.sources.openlibrary import OpenLibrary
-from calibre.ebooks.metadata.sources.overdrive import OverDrive
 from calibre.ebooks.metadata.sources.google_images import GoogleImages
 from calibre.ebooks.metadata.sources.big_book_search import BigBookSearch
 
-plugins += [GoogleBooks, GoogleImages, Amazon, Edelweiss, OpenLibrary, OverDrive, BigBookSearch]
+plugins += [GoogleBooks, GoogleImages, Amazon, Edelweiss, OpenLibrary, BigBookSearch]
 
 # }}}
 
@@ -968,6 +967,12 @@ class ActionOpenFolder(InterfaceActionBase):
     actual_plugin = 'calibre.gui2.actions.open:OpenFolderAction'
     description = _('Open the folder that contains the book files in your'
             ' calibre library')
+
+
+class ActionAutoscrollBooks(InterfaceActionBase):
+    name = 'Autoscroll Books'
+    actual_plugin = 'calibre.gui2.actions.auto_scroll:AutoscrollBooksAction'
+    description = _('Auto scroll through the list of books')
 
 
 class ActionSendToDevice(InterfaceActionBase):
@@ -1115,7 +1120,7 @@ plugins += [ActionAdd, ActionFetchAnnotations, ActionGenerateCatalog,
         ActionCopyToLibrary, ActionTweakEpub, ActionUnpackBook, ActionNextMatch, ActionStore,
         ActionPluginUpdater, ActionPickRandom, ActionEditToC, ActionSortBy,
         ActionMarkBooks, ActionEmbed, ActionTemplateTester, ActionTagMapper, ActionAuthorMapper,
-        ActionVirtualLibrary, ActionBrowseAnnotations, ActionTemplateFunctions]
+        ActionVirtualLibrary, ActionBrowseAnnotations, ActionTemplateFunctions, ActionAutoscrollBooks]
 
 # }}}
 

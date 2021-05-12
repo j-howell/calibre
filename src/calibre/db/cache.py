@@ -15,6 +15,7 @@ import traceback
 from collections import MutableSet, Set, defaultdict
 from functools import partial, wraps
 from io import BytesIO
+from threading import Lock
 from time import time
 
 from calibre import as_unicode, isbytestring
@@ -28,7 +29,9 @@ from calibre.db.categories import get_categories
 from calibre.db.errors import NoSuchBook, NoSuchFormat
 from calibre.db.fields import IDENTITY, InvalidLinkTable, create_field
 from calibre.db.lazy import FormatMetadata, FormatsList, ProxyMetadata
-from calibre.db.locking import DowngradeLockError, SafeReadLock, create_locks
+from calibre.db.locking import (
+    DowngradeLockError, LockingError, SafeReadLock, create_locks, try_lock
+)
 from calibre.db.search import Search
 from calibre.db.tables import VirtualTable
 from calibre.db.utils import type_safe_sort_key_function
@@ -142,6 +145,7 @@ class Cache(object):
         self.formatter_template_cache = {}
         self.dirtied_cache = {}
         self.vls_for_books_cache = None
+        self.vls_cache_lock = Lock()
         self.dirtied_sequence = 0
         self.cover_caches = set()
         self.clear_search_cache_count = 0
@@ -672,8 +676,25 @@ class Cache(object):
         cover_as_data is True then as mi.cover_data.
         '''
 
+        # Check if virtual_libraries_for_books rebuilt its cache. If it did then
+        # we must clear the composite caches so the new data can be taken into
+        # account. Clearing the caches requires getting a write lock, so it must
+        # be done outside of the closure of _get_metadata().
+        composite_cache_needs_to_be_cleared = False
         with self.safe_read_lock:
+            vl_cache_was_none = self.vls_for_books_cache is None
             mi = self._get_metadata(book_id, get_user_categories=get_user_categories)
+            if vl_cache_was_none and self.vls_for_books_cache is not None:
+                composite_cache_needs_to_be_cleared = True
+        if composite_cache_needs_to_be_cleared:
+            try:
+                self.clear_composite_caches()
+            except LockingError:
+                # We can't clear the composite caches because a read lock is set.
+                # As a consequence the value of a composite column that calls
+                # virtual_libraries() might be wrong. Oh well. Log and keep running.
+                print("Couldn't get write lock after vls_for_books_cache was loaded", file=sys.stderr)
+                traceback.print_exc()
 
         if get_cover:
             if cover_as_data:
@@ -1086,17 +1107,18 @@ class Cache(object):
         return self._search_api(self, query, restriction, virtual_fields=virtual_fields, book_ids=book_ids)
 
     @read_api
-    def books_in_virtual_library(self, vl, search_restriction=None):
+    def books_in_virtual_library(self, vl, search_restriction=None, virtual_fields=None):
         ' Return the set of books in the specified virtual library '
         vl = self._pref('virtual_libraries', {}).get(vl) if vl else None
         if not vl and not search_restriction:
             return self.all_book_ids()
         # We utilize the search restriction cache to speed this up
+        srch = partial(self._search, virtual_fields=virtual_fields)
         if vl:
             if search_restriction:
-                return frozenset(self._search('', vl) & self._search('', search_restriction))
-            return frozenset(self._search('', vl))
-        return frozenset(self._search('', search_restriction))
+                return frozenset(srch('', vl) & srch('', search_restriction))
+            return frozenset(srch('', vl))
+        return frozenset(srch('', search_restriction))
 
     @read_api
     def number_of_books_in_virtual_library(self, vl=None, search_restriction=None):
@@ -2208,15 +2230,34 @@ class Cache(object):
             self._restore_annotations(book_id, annotations)
 
     @read_api
-    def virtual_libraries_for_books(self, book_ids):
-        if self.vls_for_books_cache is None:
+    def virtual_libraries_for_books(self, book_ids, virtual_fields=None):
+        # use a primitive lock to ensure that only one thread is updating
+        # the cache and that recursive calls don't do the update. This
+        # method can recurse via self._search()
+        with try_lock(self.vls_cache_lock) as got_lock:
             # Using a list is slightly faster than a set.
             c = defaultdict(list)
-            libraries = self._pref('virtual_libraries', {})
-            for lib, expr in libraries.items():
-                for book in self._search(expr):
-                    c[book].append(lib)
-            self.vls_for_books_cache = {b:tuple(sorted(libs, key=sort_key)) for b, libs in c.items()}
+            if not got_lock:
+                # We get here if resolving the books in a VL triggers another VL
+                # calculation. This can be 'real' recursion, in which case the
+                # eventual answer will be wrong. It can also be a  search using
+                # a location of 'all' that causes evaluation of a composite that
+                # references virtual_libraries(). If the composite isn't used in a
+                # VL then the eventual answer will be correct because get_metadata
+                # will clear the caches.
+                return c
+            if self.vls_for_books_cache is None:
+                self.vls_for_books_cache_is_loading = True
+                libraries = self._pref('virtual_libraries', {})
+                for lib, expr in libraries.items():
+                    book = None
+                    try:
+                        for book in self._search(expr, virtual_fields=virtual_fields):
+                            c[book].append(lib)
+                    except Exception as e:
+                        if book:
+                            c[book].append(_('[Error in Virtual library {0}: {1}]').format(lib, str(e)))
+                self.vls_for_books_cache = {b:tuple(sorted(libs, key=sort_key)) for b, libs in c.items()}
         if not book_ids:
             book_ids = self._all_book_ids()
         # book_ids is usually 1 long. The loop will be faster than a comprehension
