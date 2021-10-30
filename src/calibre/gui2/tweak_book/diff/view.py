@@ -1,39 +1,39 @@
 #!/usr/bin/env python
 # vim:fileencoding=utf-8
+# License: GPLv3 Copyright: 2014, Kovid Goyal <kovid at kovidgoyal.net>
 
-
-__license__ = 'GPL v3'
-__copyright__ = '2014, Kovid Goyal <kovid at kovidgoyal.net>'
-
-import re, unicodedata
+import re
+import regex
+import unicodedata
+from collections import OrderedDict, namedtuple
+from difflib import SequenceMatcher
+from functools import partial
 from itertools import chain
 from math import ceil
-from functools import partial
-from collections import namedtuple, OrderedDict
-from difflib import SequenceMatcher
-from polyglot.builtins import iteritems, unicode_type, zip, range, as_bytes, map
-
-import regex
 from qt.core import (
-    QSplitter, QApplication, QTimer, QEvent,
-    QTextCursor, QTextCharFormat, Qt, QRect, QPainter, QPalette, QPen, QBrush,
-    QColor, QTextLayout, QCursor, QFont, QSplitterHandle, QPainterPath, QPlainTextEdit,
-    QHBoxLayout, QWidget, QScrollBar, QEventLoop, pyqtSignal, QImage, QPixmap,
-    QMenu, QIcon, QKeySequence)
+    QApplication, QBrush, QColor, QCursor, QEvent, QEventLoop, QFont, QHBoxLayout,
+    QIcon, QImage, QKeySequence, QMenu, QPainter, QPainterPath, QPalette, QPen,
+    QPixmap, QPlainTextEdit, QRect, QScrollBar, QSplitter, QSplitterHandle, Qt,
+    QTextCharFormat, QTextCursor, QTextLayout, QTimer, QWidget, pyqtSignal
+)
 
-from calibre import human_readable, fit_image
+from calibre import fit_image, human_readable
 from calibre.gui2 import info_dialog
 from calibre.gui2.tweak_book import tprefs
-from calibre.gui2.tweak_book.editor.text import PlainTextEdit, default_font_family, LineNumbers
-from calibre.gui2.tweak_book.editor.themes import theme_color, get_theme
 from calibre.gui2.tweak_book.diff import get_sequence_matcher
 from calibre.gui2.tweak_book.diff.highlight import get_highlighter
+from calibre.gui2.tweak_book.editor.text import (
+    LineNumbers, PlainTextEdit, default_font_family
+)
+from calibre.gui2.tweak_book.editor.themes import get_theme, theme_color
+from calibre.utils.icu import utf16_length
 from calibre.utils.xml_parse import safe_xml_fromstring
+from polyglot.builtins import as_bytes, iteritems
 
 Change = namedtuple('Change', 'ltop lbot rtop rbot kind')
 
 
-class BusyCursor(object):
+class BusyCursor:
 
     def __enter__(self):
         QApplication.setOverrideCursor(QCursor(Qt.CursorShape.WaitCursor))
@@ -44,17 +44,19 @@ class BusyCursor(object):
 
 def beautify_text(raw, syntax):
     from lxml import etree
-    from calibre.ebooks.oeb.polish.parsing import parse
-    from calibre.ebooks.oeb.polish.pretty import pretty_xml_tree, pretty_html_tree
+
     from calibre.ebooks.chardet import strip_encoding_declarations
+    from calibre.ebooks.oeb.polish.parsing import parse
+    from calibre.ebooks.oeb.polish.pretty import pretty_html_tree, pretty_xml_tree
     if syntax == 'xml':
         root = safe_xml_fromstring(strip_encoding_declarations(raw))
         pretty_xml_tree(root)
     elif syntax == 'css':
         import logging
-        from calibre.ebooks.oeb.base import serialize, _css_logger
-        from calibre.ebooks.oeb.polish.utils import setup_css_parser_serialization
         from css_parser import CSSParser, log
+
+        from calibre.ebooks.oeb.base import _css_logger, serialize
+        from calibre.ebooks.oeb.polish.utils import setup_css_parser_serialization
         setup_css_parser_serialization(tprefs['editor_tab_stop_width'])
         log.setLevel(logging.WARN)
         log.raiseExceptions = False
@@ -79,7 +81,7 @@ class LineNumberMap(dict):  # {{{
         return self
 
     def __setitem__(self, k, v):
-        v = unicode_type(v)
+        v = str(v)
         dict.__setitem__(self, k, v)
         self.max_width = max(self.max_width, len(v))
 
@@ -160,13 +162,13 @@ class TextBrowser(PlainTextEdit):  # {{{
 
     def calculate_metrics(self):
         w = self.fontMetrics()
-        self.number_width = max(map(lambda x:w.width(unicode_type(x)), range(10)))
+        self.number_width = max(map(lambda x:w.width(str(x)), range(10)))
         self.space_width = w.width(' ')
 
     def show_context_menu(self, pos):
         m = QMenu(self)
         a = m.addAction
-        i = unicode_type(self.textCursor().selectedText()).rstrip('\0')
+        i = str(self.textCursor().selectedText()).rstrip('\0')
         if i:
             a(QIcon(I('edit-copy.png')), _('Copy to clipboard'), self.copy).setShortcut(QKeySequence.StandardKey.Copy)
 
@@ -215,7 +217,7 @@ class TextBrowser(PlainTextEdit):  # {{{
         headers = dict(self.headers)
         if lnum in headers:
             cpos = self.search_header_pos
-        lines = unicode_type(self.toPlainText()).splitlines()
+        lines = str(self.toPlainText()).splitlines()
         for hn, text in self.headers:
             lines[hn] = text
         prefix, postfix = lines[lnum][:cpos], lines[lnum][cpos:]
@@ -306,7 +308,7 @@ class TextBrowser(PlainTextEdit):  # {{{
         while block.isValid() and top <= ev.rect().bottom():
             r = ev.rect()
             if block.isVisible() and bottom >= r.top():
-                text = unicode_type(self.line_number_map.get(num, ''))
+                text = str(self.line_number_map.get(num, ''))
                 is_start = text != '-' and num in change_starts
                 if is_start:
                     painter.save()
@@ -529,7 +531,7 @@ class DiffSplit(QSplitter):  # {{{
     def add_diff(self, left_name, right_name, left_text, right_text, context=None, syntax=None, beautify=False):
         left_text, right_text = left_text or '', right_text or ''
         is_identical = len(left_text) == len(right_text) and left_text == right_text and left_name == right_name
-        is_text = isinstance(left_text, unicode_type) and isinstance(right_text, unicode_type)
+        is_text = isinstance(left_text, str) and isinstance(right_text, str)
         left_name = left_name or '[%s]'%_('This file was added')
         right_name = right_name or '[%s]'%_('This file was removed')
         self.left.headers.append((self.left.blockCount() - 1, left_name))
@@ -887,7 +889,7 @@ class DiffSplit(QSplitter):  # {{{
                     f = QTextLayout.FormatRange()
                     f.start, f.length, f.format = pos, len(word), fmt
                     fmts.append(f)
-                pos += len(word)
+                pos += utf16_length(word)
             return block, pos, fmts
 
         lfmts, rfmts, lpos, rpos = [], [], 0, 0

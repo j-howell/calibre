@@ -7,10 +7,9 @@ import re, os, shutil, numbers
 
 from calibre import CurrentDir
 from calibre.customize import Plugin
-from polyglot.builtins import unicode_type
 
 
-class ConversionOption(object):
+class ConversionOption:
 
     '''
     Class representing conversion options
@@ -50,7 +49,7 @@ class ConversionOption(object):
                 choices=self.choices)
 
 
-class OptionRecommendation(object):
+class OptionRecommendation:
     LOW  = 1
     MED  = 2
     HIGH = 3
@@ -81,12 +80,12 @@ class OptionRecommendation(object):
                                                     self.option.choices:
             raise ValueError('OpRec: %s: Recommended value not in choices'%
                              self.option.name)
-        if not (isinstance(self.recommended_value, (numbers.Number, bytes, unicode_type)) or self.recommended_value is None):
+        if not (isinstance(self.recommended_value, (numbers.Number, bytes, str)) or self.recommended_value is None):
             raise ValueError('OpRec: %s:'%self.option.name + repr(
                 self.recommended_value) + ' is not a string or a number')
 
 
-class DummyReporter(object):
+class DummyReporter:
 
     def __init__(self):
         self.cancel_requested = False
@@ -342,7 +341,7 @@ class OutputFormatPlugin(Plugin):
     @property
     def is_periodical(self):
         return self.oeb.metadata.publication_type and \
-            unicode_type(self.oeb.metadata.publication_type[0]).startswith('periodical:')
+            str(self.oeb.metadata.publication_type[0]).startswith('periodical:')
 
     def specialize_options(self, log, opts, input_fmt):
         '''

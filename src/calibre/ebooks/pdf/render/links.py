@@ -27,12 +27,12 @@ class Destination(Array):
                 q -= 1
         if q != pnum:
             current_log().warn('Could not find page {} for link destination, using page {} instead'.format(pnum, q))
-        super(Destination, self).__init__([
+        super().__init__([
             pref, Name('XYZ'), pos['left'], pos['top'], None
         ])
 
 
-class Links(object):
+class Links:
 
     def __init__(self, pdf, mark_links, page_size):
         self.anchors = {}
@@ -88,7 +88,7 @@ class Links(object):
                 try:
                     purl = urlparse(url)
                 except Exception:
-                    self.pdf.debug('Ignoring unparseable URL: %r' % url)
+                    self.pdf.debug('Ignoring unparsable URL: %r' % url)
                     continue
                 if purl.scheme and purl.scheme != 'file':
                     action = Dictionary({

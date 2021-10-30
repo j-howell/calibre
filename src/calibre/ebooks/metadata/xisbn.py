@@ -11,7 +11,7 @@ import threading, re, json
 from calibre import browser
 
 
-class xISBN(object):
+class xISBN:
 
     '''
     This class is used to find the ISBN numbers of "related" editions of a
@@ -52,8 +52,7 @@ class xISBN(object):
 
     def isbns_in_data(self, data):
         for rec in data:
-            for i in rec.get('isbn', []):
-                yield i
+            yield from rec.get('isbn', [])
 
     def get_data(self, isbn):
         isbn = self.purify(isbn)

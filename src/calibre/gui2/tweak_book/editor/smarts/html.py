@@ -27,14 +27,13 @@ from calibre.gui2.tweak_book.editor.syntax.html import (
     ATTR_END, ATTR_NAME, ATTR_START, ATTR_VALUE
 )
 from calibre.utils.icu import utf16_length
-from polyglot.builtins import unicode_type
 
 get_offset = itemgetter(0)
 PARAGRAPH_SEPARATOR = '\u2029'
 DEFAULT_LINK_TEMPLATE = '<a href="_TARGET_">_TEXT_</a>'
 
 
-class Tag(object):
+class Tag:
 
     def __init__(self, start_block, tag_start, end_block, tag_end, self_closing=False):
         self.start_block, self.end_block = start_block, end_block
@@ -354,10 +353,10 @@ class Smarts(NullSmarts):
             a = QTextEdit.ExtraSelection()
             a.cursor, a.format = editor.textCursor(), editor.match_paren_format
             a.cursor.setPosition(tag.start_block.position()), a.cursor.movePosition(QTextCursor.MoveOperation.EndOfBlock, QTextCursor.MoveMode.KeepAnchor)
-            text = unicode_type(a.cursor.selectedText())
+            text = str(a.cursor.selectedText())
             start_pos = utf16_length(text[:tag.start_offset])
             a.cursor.setPosition(tag.end_block.position()), a.cursor.movePosition(QTextCursor.MoveOperation.EndOfBlock, QTextCursor.MoveMode.KeepAnchor)
-            text = unicode_type(a.cursor.selectedText())
+            text = str(a.cursor.selectedText())
             end_pos = utf16_length(text[:tag.end_offset + 1])
             a.cursor.setPosition(tag.start_block.position() + start_pos)
             a.cursor.setPosition(tag.end_block.position() + end_pos, QTextCursor.MoveMode.KeepAnchor)
@@ -503,7 +502,7 @@ class Smarts(NullSmarts):
         pos = min(c.position(), c.anchor())
         m = re.match(r'[a-zA-Z0-9:-]+', name)
         cname = name if m is None else m.group()
-        c.insertText('<{0}>{1}</{2}>'.format(name, text, cname))
+        c.insertText('<{}>{}</{}>'.format(name, text, cname))
         c.setPosition(pos + 2 + len(name))
         editor.setTextCursor(c)
 
@@ -723,8 +722,10 @@ class Smarts(NullSmarts):
         if key == Qt.Key.Key_Home and smart_home(editor, ev):
             return True
 
-        if key == Qt.Key.Key_Tab and smart_tab(editor, ev):
-            return True
+        if key == Qt.Key.Key_Tab:
+            mods = ev.modifiers()
+            if not mods & Qt.KeyboardModifier.ControlModifier and smart_tab(editor, ev):
+                return True
 
         if key == Qt.Key.Key_Backspace and smart_backspace(editor, ev):
             return True

@@ -28,7 +28,7 @@ from calibre.utils.cleantext import clean_ascii_chars, clean_xml_chars
 from calibre.utils.img import AnimatedGIF, gif_data_to_png_data, save_cover_data_to
 from calibre.utils.imghdr import what
 from calibre.utils.logging import default_log
-from polyglot.builtins import iteritems, map, range, unicode_type
+from polyglot.builtins import iteritems
 
 
 class TopazError(ValueError):
@@ -44,7 +44,7 @@ class KFXError(ValueError):
         ).format('https://www.mobileread.com/forums/showthread.php?t=283371'))
 
 
-class MobiReader(object):
+class MobiReader:
     PAGE_BREAK_PAT = re.compile(
         r'<\s*/{0,1}\s*mbp:pagebreak((?:\s+[^/>]*){0,1})/{0,1}\s*>\s*(?:<\s*/{0,1}\s*mbp:pagebreak\s*/{0,1}\s*>)*',
         re.IGNORECASE)
@@ -302,7 +302,7 @@ class MobiReader(object):
             pass
 
         def write_as_utf8(path, data):
-            if isinstance(data, unicode_type):
+            if isinstance(data, str):
                 data = data.encode('utf-8')
             with lopen(path, 'wb') as f:
                 f.write(data)

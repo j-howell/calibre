@@ -10,7 +10,6 @@ from uuid import uuid4
 
 from calibre.ebooks.oeb.base import OEB_STYLES
 from calibre.ebooks.oeb.transforms.subset import find_font_face_rules
-from polyglot.builtins import range
 
 
 def obfuscate_font_data(data, key):
@@ -20,7 +19,7 @@ def obfuscate_font_data(data, key):
     return prefix + data[32:]
 
 
-class FontsManager(object):
+class FontsManager:
 
     def __init__(self, namespace, oeb, opts):
         self.namespace = namespace

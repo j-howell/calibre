@@ -13,14 +13,14 @@ from calibre.ebooks.mobi.reader.headers import NULL_INDEX
 from calibre.ebooks.mobi.langcodes import main_language, sub_language
 from calibre.ebooks.mobi.debug import format_bytes
 from calibre.ebooks.mobi.utils import get_trailing_data
-from polyglot.builtins import iteritems, range, unicode_type
+from polyglot.builtins import iteritems
 
 # PalmDB {{{
 
 
-class PalmDOCAttributes(object):
+class PalmDOCAttributes:
 
-    class Attr(object):
+    class Attr:
 
         def __init__(self, name, field, val):
             self.name = name
@@ -43,12 +43,12 @@ class PalmDOCAttributes(object):
                 self.val))
 
     def __str__(self):
-        attrs = '\n\t'.join([unicode_type(x) for x in self.attributes])
+        attrs = '\n\t'.join([str(x) for x in self.attributes])
         return 'PalmDOC Attributes: %s\n\t%s'%(bin(self.val), attrs)
     __unicode__ = __str__
 
 
-class PalmDB(object):
+class PalmDB:
 
     def __init__(self, raw):
         self.raw = raw
@@ -86,7 +86,7 @@ class PalmDB(object):
     def __str__(self):
         ans = ['*'*20 + ' PalmDB Header '+ '*'*20]
         ans.append('Name: %r'%self.name)
-        ans.append(unicode_type(self.attributes))
+        ans.append(str(self.attributes))
         ans.append('Version: %s'%self.version)
         ans.append('Creation date: %s (%s)'%(self.creation_date.isoformat(),
             self.creation_date_raw))
@@ -108,7 +108,7 @@ class PalmDB(object):
 # }}}
 
 
-class Record(object):  # {{{
+class Record:  # {{{
 
     def __init__(self, raw, header):
         self.offset, self.flags, self.uid = header
@@ -123,7 +123,7 @@ class Record(object):  # {{{
 # EXTH {{{
 
 
-class EXTHRecord(object):
+class EXTHRecord:
 
     def __init__(self, type_, data, length):
         self.type = type_
@@ -216,7 +216,7 @@ class EXTHRecord(object):
         return '%s (%d): %r'%(self.name, self.type, self.data)
 
 
-class EXTHHeader(object):
+class EXTHHeader:
 
     def __init__(self, raw):
         self.raw = raw
@@ -258,14 +258,14 @@ class EXTHHeader(object):
         ans.append('Number of EXTH records: %d'%self.count)
         ans.append('EXTH records...')
         for r in self.records:
-            ans.append(unicode_type(r))
+            ans.append(str(r))
         return '\n'.join(ans)
     __unicode__ = __str__
 
 # }}}
 
 
-class MOBIHeader(object):  # {{{
+class MOBIHeader:  # {{{
 
     def __init__(self, record0, offset):
         self.raw = record0.raw
@@ -501,7 +501,7 @@ class MOBIHeader(object):  # {{{
         ans = '\n'.join(ans)
 
         if self.has_exth:
-            ans += '\n\n' + unicode_type(self.exth)
+            ans += '\n\n' + str(self.exth)
             ans += '\n\nBytes after EXTH (%d bytes): %s'%(
                     len(self.bytes_after_exth),
                     format_bytes(self.bytes_after_exth))
@@ -514,7 +514,7 @@ class MOBIHeader(object):  # {{{
 # }}}
 
 
-class MOBIFile(object):
+class MOBIFile:
 
     def __init__(self, stream):
         self.raw = stream.read()
@@ -586,7 +586,7 @@ class MOBIFile(object):
         self.decompress6, self.decompress8 = d6, d8
 
 
-class TextRecord(object):  # {{{
+class TextRecord:  # {{{
 
     def __init__(self, idx, record, extra_data_flags, decompress):
         self.trailing_data, self.raw = get_trailing_data(record.raw, extra_data_flags)

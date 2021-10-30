@@ -12,7 +12,7 @@ from copy import deepcopy
 
 from calibre.utils.lock import ExclusiveFile
 from calibre.constants import config_dir, CONFIG_DIR_MODE, preferred_encoding, filesystem_encoding, iswindows
-from polyglot.builtins import unicode_type, iteritems, map
+from polyglot.builtins import iteritems
 
 plugin_dir = os.path.join(config_dir, 'plugins')
 
@@ -21,7 +21,7 @@ def parse_old_style(src):
     import pickle as cPickle
     options = {'cPickle':cPickle}
     try:
-        if not isinstance(src, unicode_type):
+        if not isinstance(src, str):
             src = src.decode('utf-8')
         src = src.replace('PyQt%d.QtCore' % 4, 'PyQt5.QtCore')
         src = re.sub(r'cPickle\.loads\(([\'"])', r'cPickle.loads(b\1', src)
@@ -119,7 +119,7 @@ def make_config_dir():
         os.makedirs(plugin_dir, mode=CONFIG_DIR_MODE)
 
 
-class Option(object):
+class Option:
 
     def __init__(self, name, switches=[], help='', type=None, choices=None,
                  check=None, group=None, default=None, action=None, metavar=None):
@@ -153,13 +153,13 @@ class Option(object):
         return repr(self)
 
 
-class OptionValues(object):
+class OptionValues:
 
     def copy(self):
         return deepcopy(self)
 
 
-class OptionSet(object):
+class OptionSet:
 
     OVERRIDE_PAT = re.compile(r'#{3,100} Override Options #{15}(.*?)#{3,100} End Override #{3,100}',
                               re.DOTALL|re.IGNORECASE)
@@ -255,7 +255,7 @@ class OptionSet(object):
             if opt.help:
                 opt.help = t(opt.help)
                 if opt.name == 'use_primary_find_in_search':
-                    opt.help = opt.help.format(u'ñ')
+                    opt.help = opt.help.format('ñ')
 
     def option_parser(self, user_defaults=None, usage='', gui_mode=False):
         from calibre.utils.config import OptionParser
@@ -295,7 +295,7 @@ class OptionSet(object):
     def parse_string(self, src):
         options = {}
         if src:
-            is_old_style = (isinstance(src, bytes) and src.startswith(b'#')) or (isinstance(src, unicode_type) and src.startswith(u'#'))
+            is_old_style = (isinstance(src, bytes) and src.startswith(b'#')) or (isinstance(src, str) and src.startswith('#'))
             if is_old_style:
                 options = parse_old_style(src)
             else:
@@ -323,7 +323,7 @@ class OptionSet(object):
         return json_dumps(data, ignore_unserializable=ignore_unserializable)
 
 
-class ConfigInterface(object):
+class ConfigInterface:
 
     def __init__(self, description):
         self.option_set       = OptionSet(description=description)
@@ -399,7 +399,7 @@ class Config(ConfigInterface):
             src = self.option_set.serialize(opts)
             f.seek(0)
             f.truncate()
-            if isinstance(src, unicode_type):
+            if isinstance(src, str):
                 src = src.encode('utf-8')
             f.write(src)
 
@@ -429,7 +429,7 @@ class StringConfig(ConfigInterface):
         self.set_src(self.option_set.serialize(opts))
 
 
-class ConfigProxy(object):
+class ConfigProxy:
     '''
     A Proxy to minimize file reads for widely used config settings
     '''
@@ -477,7 +477,7 @@ def create_global_prefs(conf_obj=None):
     c.add_opt('database_path',
               default=os.path.expanduser('~/library1.db'),
               help=_('Path to the database in which books are stored'))
-    c.add_opt('filename_pattern', default=u'(?P<title>.+) - (?P<author>[^_]+)',
+    c.add_opt('filename_pattern', default='(?P<title>.+) - (?P<author>[^_]+)',
               help=_('Pattern to guess metadata from filenames'))
     c.add_opt('isbndb_com_key', default='',
               help=_('Access key for isbndb.com'))
@@ -532,16 +532,22 @@ def create_global_prefs(conf_obj=None):
                 'separated by commas. Only takes effect if you set the option '
                 'to limit search columns above.'))
     c.add_opt('use_primary_find_in_search', default=True,
-            help=_(u'Characters typed in the search box will match their '
+            help=_('Characters typed in the search box will match their '
                    'accented versions, based on the language you have chosen '
                    'for the calibre interface. For example, in '
-                   u'English, searching for n will match both {} and n, but if '
+                   'English, searching for n will match both {} and n, but if '
                    'your language is Spanish it will only match n. Note that '
                    'this is much slower than a simple search on very large '
                    'libraries. Also, this option will have no effect if you turn '
                    'on case-sensitive searching'))
     c.add_opt('case_sensitive', default=False, help=_(
         'Make searches case-sensitive'))
+    c.add_opt('numeric_collation', default=False,
+            help=_('Recognize numbers inside text when sorting. Setting this '
+                   'means that when sorting on text fields like title the text "Book 2"'
+                   'will sort before the text "Book 100". Note that setting this '
+                   'can cause problems with text that starts with numbers and is '
+                   'a little slower.'))
 
     c.add_opt('migrated', default=False, help='For Internal use. Don\'t modify.')
     return c
@@ -550,7 +556,7 @@ def create_global_prefs(conf_obj=None):
 prefs = ConfigProxy(create_global_prefs())
 if prefs['installation_uuid'] is None:
     import uuid
-    prefs['installation_uuid'] = unicode_type(uuid.uuid4())
+    prefs['installation_uuid'] = str(uuid.uuid4())
 
 # Read tweaks
 
@@ -650,13 +656,25 @@ def read_tweaks():
 tweaks = read_tweaks()
 
 
+def migrate_tweaks_to_prefs():
+    # This must happen after the tweaks are loaded
+    # Migrate the numeric_collation tweak
+    if 'numeric_collation' in tweaks:
+        prefs['numeric_collation'] = tweaks.get('numeric_collation', False)
+        tweaks.pop('numeric_collation')
+        write_custom_tweaks(tweaks)
+
+
+migrate_tweaks_to_prefs()
+
+
 def reset_tweaks_to_default():
     default_tweaks = exec_tweaks(default_tweaks_raw())
     tweaks.clear()
     tweaks.update(default_tweaks)
 
 
-class Tweak(object):
+class Tweak:
 
     def __init__(self, name, value):
         self.name, self.value = name, value

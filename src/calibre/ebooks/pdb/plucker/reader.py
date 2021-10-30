@@ -16,7 +16,7 @@ from calibre.ebooks.pdb.formatreader import FormatReader
 from calibre.ebooks.compression.palmdoc import decompress_doc
 from calibre.utils.imghdr import identify
 from calibre.utils.img import save_cover_data_to, Canvas, image_from_data
-from polyglot.builtins import codepoint_to_chr, range
+from polyglot.builtins import codepoint_to_chr
 
 DATATYPE_PHTML = 0
 DATATYPE_PHTML_COMPRESSED = 1
@@ -111,14 +111,14 @@ MIBNUM_TO_NAME = {
 }
 
 
-class HeaderRecord(object):
+class HeaderRecord:
     '''
     Plucker header. PDB record 0.
     '''
 
     def __init__(self, raw):
         self.uid, = struct.unpack('>H', raw[0:2])
-        # This is labled version in the spec.
+        # This is labeled version in the spec.
         # 2 is ZLIB compressed,
         # 1 is DOC compressed
         self.compression, = struct.unpack('>H', raw[2:4])
@@ -137,7 +137,7 @@ class HeaderRecord(object):
                 self.home_html = id
 
 
-class SectionHeader(object):
+class SectionHeader:
     '''
     Every sections (record) has this header. It gives
     details about the section such as it's uid.
@@ -151,7 +151,7 @@ class SectionHeader(object):
         self.flags, = struct.unpack('>B', raw[7:8])
 
 
-class SectionHeaderText(object):
+class SectionHeaderText:
     '''
     Sub header for text records.
     '''
@@ -176,13 +176,13 @@ class SectionHeaderText(object):
             self.paragraph_offsets.append(running_offset)
 
 
-class SectionMetadata(object):
+class SectionMetadata:
     '''
     Metadata.
 
     This does not store metadata such as title, or author.
     That metadata would be best retrieved with the PDB (plucker)
-    metdata reader.
+    metadata reader.
 
     This stores document specific information such as the
     text encoding.
@@ -234,7 +234,7 @@ class SectionMetadata(object):
             adv += 2*length
 
 
-class SectionText(object):
+class SectionText:
     '''
     Text data. Stores a text section header and the PHTML.
     '''
@@ -244,7 +244,7 @@ class SectionText(object):
         self.data = raw[section_header.paragraphs * 4:]
 
 
-class SectionCompositeImage(object):
+class SectionCompositeImage:
     '''
     A composite image consists of a 2D array
     of rows and columns. The entries in the array
@@ -358,14 +358,14 @@ class Reader(FormatReader):
     def extract_content(self, output_dir):
         # Each text record is independent (unless the continuation
         # value is set in the previous record). Put each converted
-        # text recored into a separate file. We will reference the
+        # text recorded into a separate file. We will reference the
         # home.html file as the first file and let the HTML input
         # plugin assemble the order based on hyperlinks.
         with CurrentDir(output_dir):
             for uid, num in self.uid_text_secion_number.items():
                 self.log.debug('Writing record with uid: %s as %s.html' % (uid, uid))
                 with open('%s.html' % uid, 'wb') as htmlf:
-                    html = u'<html><body>'
+                    html = '<html><body>'
                     section_header, section_data = self.sections[num]
                     if section_header.type == DATATYPE_PHTML:
                         html += self.process_phtml(section_data.data, section_data.header.paragraph_offsets)
@@ -452,7 +452,7 @@ class Reader(FormatReader):
         odi = self.options.debug_pipeline
         self.options.debug_pipeline = None
         # Determine the home.html record uid. This should be set in the
-        # reserved values in the metadata recored. home.html is the first
+        # reserved values in the metadata recorded. home.html is the first
         # text record (should have hyper link references to other records)
         # in the document.
         try:
@@ -477,7 +477,7 @@ class Reader(FormatReader):
             return decompress_doc(data)
 
     def process_phtml(self, d, paragraph_offsets=()):
-        html = u'<p id="p0">'
+        html = '<p id="p0">'
         offset = 0
         paragraph_open = True
         link_open = False
@@ -488,11 +488,11 @@ class Reader(FormatReader):
         while offset < len(d):
             if not paragraph_open:
                 if need_set_p_id:
-                    html += u'<p id="p%s">' % p_num
+                    html += '<p id="p%s">' % p_num
                     p_num += 1
                     need_set_p_id = False
                 else:
-                    html += u'<p>'
+                    html += '<p>'
                 paragraph_open = True
 
             c = ord(d[offset:offset+1])
@@ -616,23 +616,23 @@ class Reader(FormatReader):
                 elif c == 0x33:
                     offset += 3
                     if paragraph_open:
-                        html += u'</p>'
+                        html += '</p>'
                         paragraph_open = False
-                    html += u'<hr />'
+                    html += '<hr />'
                 # New line
                 # 0 Bytes
                 elif c == 0x38:
                     if paragraph_open:
-                        html += u'</p>\n'
+                        html += '</p>\n'
                         paragraph_open = False
                 # Italic text begins
                 # 0 Bytes
                 elif c == 0x40:
-                    html += u'<i>'
+                    html += '<i>'
                 # Italic text ends
                 # 0 Bytes
                 elif c == 0x48:
-                    html += u'</i>'
+                    html += '</i>'
                 # Set text color
                 # 3 Bytes
                 # 8-bit red, 8-bit green, 8-bit blue
@@ -649,19 +649,19 @@ class Reader(FormatReader):
                 # Underline text begins
                 # 0 Bytes
                 elif c == 0x60:
-                    html += u'<u>'
+                    html += '<u>'
                 # Underline text ends
                 # 0 Bytes
                 elif c == 0x68:
-                    html += u'</u>'
+                    html += '</u>'
                 # Strike-through text begins
                 # 0 Bytes
                 elif c == 0x70:
-                    html += u'<s>'
+                    html += '<s>'
                 # Strike-through text ends
                 # 0 Bytes
                 elif c == 0x78:
-                    html += u'</s>'
+                    html += '</s>'
                 # 16-bit Unicode character
                 # 3 Bytes
                 # alternate text length, 16-bit unicode character
@@ -721,10 +721,10 @@ class Reader(FormatReader):
             if offset in paragraph_offsets:
                 need_set_p_id = True
                 if paragraph_open:
-                    html += u'</p>\n'
+                    html += '</p>\n'
                     paragraph_open = False
 
         if paragraph_open:
-            html += u'</p>'
+            html += '</p>'
 
         return html

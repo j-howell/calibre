@@ -15,10 +15,10 @@ from calibre.srv.routes import Router
 from calibre.srv.users import UserManager
 from calibre.utils.date import utcnow
 from calibre.utils.search_query_parser import ParseException
-from polyglot.builtins import itervalues, filter, unicode_type
+from polyglot.builtins import itervalues
 
 
-class Context(object):
+class Context:
 
     log = None
     url_for = None
@@ -148,7 +148,7 @@ class Context(object):
             if old is None or old[0] <= db.last_modified():
                 categories = db.get_categories(book_ids=restrict_to_ids, sort=opts.sort_by, first_letter_sort=opts.collapse_model == 'first letter')
                 data = json.dumps(render(db, categories), ensure_ascii=False)
-                if isinstance(data, unicode_type):
+                if isinstance(data, str):
                     data = data.encode('utf-8')
                 cache[key] = old = (utcnow(), data)
                 if len(cache) > self.CATEGORY_CACHE_SIZE:
@@ -186,7 +186,7 @@ class Context(object):
 SRV_MODULES = ('ajax', 'books', 'cdb', 'code', 'content', 'legacy', 'opds', 'users_api', 'convert')
 
 
-class Handler(object):
+class Handler:
 
     def __init__(self, libraries, opts, testing=False, notify_changes=None):
         ctx = Context(libraries, opts, testing=testing, notify_changes=notify_changes)

@@ -1,4 +1,3 @@
-
 #########################################################################
 #                                                                       #
 #                                                                       #
@@ -15,7 +14,6 @@ import os, re
 
 from calibre.ebooks.rtf2xml import copy, check_brackets
 from calibre.ptempfile import better_mktemp
-from polyglot.builtins import unicode_type
 
 from . import open_for_read, open_for_write
 
@@ -588,7 +586,7 @@ class ProcessTokens:
         }
     """
         # unknown
-        # These must get passed on because they occure after \\*
+        # These must get passed on because they occurred after \\*
         'do'                :   ('un', 'unknown___', self.default_func),
         'company'           :	('un', 'company___', self.default_func),
         'shpinst'           :   ('un', 'unknown___', self.default_func),
@@ -695,7 +693,7 @@ class ProcessTokens:
         if num[-1] == ';':
             num = num[:-1]
             third_field = 'en'
-        num = unicode_type('%X' % int(num))
+        num = '%X' % int(num)
         if len(num) != 2:
             num = "0" + num
         return 'cw<%s<%s<%s<%s\n' % (pre, token, third_field, num)
@@ -732,7 +730,7 @@ class ProcessTokens:
             return 0
         num = '%0.2f' % round(numerator/denominator, 2)
         return num
-        string_num = unicode_type(num)
+        string_num = str(num)
         if string_num[-2:] == ".0":
             string_num = string_num[:-2]
         return string_num
@@ -755,7 +753,7 @@ class ProcessTokens:
         return first, second
 
     def convert_to_hex(self,number):
-        """Convert a string to uppercase hexidecimal"""
+        """Convert a string to uppercase hexadecimal"""
         num = int(number)
         try:
             hex_num = "%X" % num

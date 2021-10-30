@@ -9,7 +9,6 @@ import os
 
 from calibre import _ent_pat, walk, xml_entity_to_unicode
 from calibre.customize.conversion import InputFormatPlugin, OptionRecommendation
-from polyglot.builtins import getcwd
 
 MD_EXTENSIONS = {
     'abbr': _('Abbreviations'),
@@ -143,7 +142,7 @@ class TXTInput(InputFormatPlugin):
         txt = b''
         log.debug('Reading text from file...')
         length = 0
-        base_dir = self.output_dir = getcwd()
+        base_dir = self.output_dir = os.getcwd()
 
         # Extract content from zip archive.
         if file_ext == 'txtz':
@@ -170,7 +169,7 @@ class TXTInput(InputFormatPlugin):
                     if txt_formatting is not None and txt_formatting.text:
                         txt_formatting = txt_formatting.text.strip()
                         if txt_formatting in ('plain', 'textile', 'markdown') and options.formatting_type == 'auto':
-                            log.info(f'Using metadata from TXTZ archive to set text formating type to: {txt_formatting}')
+                            log.info(f'Using metadata from TXTZ archive to set text formatting type to: {txt_formatting}')
                             options.formatting_type = txt_formatting
                             if txt_formatting != 'plain':
                                 options.paragraph_type = 'off'

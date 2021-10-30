@@ -36,9 +36,10 @@ from calibre.gui2.webengine import (
     secure_webengine, to_js
 )
 from calibre.srv.code import get_translations_data
+from calibre.utils.localization import localize_user_manual_link
 from calibre.utils.serialize import json_loads
 from calibre.utils.shared_file import share_open
-from polyglot.builtins import as_bytes, iteritems, unicode_type
+from polyglot.builtins import as_bytes, iteritems
 from polyglot.functools import lru_cache
 
 SANDBOX_HOST = FAKE_HOST.rpartition('.')[0] + '.sandbox'
@@ -75,7 +76,7 @@ def get_data(name):
     try:
         with share_open(path, 'rb') as f:
             return f.read(), guess_type(name)
-    except EnvironmentError as err:
+    except OSError as err:
         prints('Failed to read from book file: {} with error: {}'.format(name, as_unicode(err)))
     return None, None
 
@@ -122,7 +123,7 @@ def handle_mathjax_request(rq, name):
         try:
             with lopen(path, 'rb') as f:
                 raw = f.read()
-        except EnvironmentError as err:
+        except OSError as err:
             prints("Failed to get mathjax file: {} with error: {}".format(name, err), file=sys.stderr)
             rq.fail(QWebEngineUrlRequestJob.Error.RequestFailed)
             return
@@ -275,6 +276,7 @@ class ViewerBridge(Bridge):
     tts = from_js(object, object)
     edit_book = from_js(object, object, object)
     show_book_folder = from_js()
+    show_help = from_js(object)
 
     create_view = to_js()
     start_book_load = to_js()
@@ -366,7 +368,7 @@ class WebPage(QWebEnginePage):
         prints('%s: %s:%s: %s' % (prefix, source_id, linenumber, msg), file=sys.stderr)
         try:
             sys.stderr.flush()
-        except EnvironmentError:
+        except OSError:
             pass
 
     def acceptNavigationRequest(self, url, req_type, is_main_frame):
@@ -538,6 +540,7 @@ class WebView(RestartingWebEngineView):
         self.bridge.highlights_changed.connect(self.highlights_changed)
         self.bridge.edit_book.connect(self.edit_book)
         self.bridge.show_book_folder.connect(self.show_book_folder)
+        self.bridge.show_help.connect(self.show_help)
         self.bridge.open_url.connect(safe_open_url)
         self.bridge.speak_simple_text.connect(self.tts.speak_simple_text)
         self.bridge.tts.connect(self.tts.action)
@@ -681,7 +684,7 @@ class WebView(RestartingWebEngineView):
             vprefs['local_storage'] = sd
 
     def do_callback(self, func_name, callback):
-        cid = unicode_type(next(self.callback_id_counter))
+        cid = str(next(self.callback_id_counter))
         self.callback_map[cid] = callback
         self.execute_when_ready('get_current_cfi', cid)
 
@@ -743,6 +746,10 @@ class WebView(RestartingWebEngineView):
     def show_book_folder(self):
         path = os.path.dirname(os.path.abspath(set_book_path.pathtoebook))
         safe_open_url(QUrl.fromLocalFile(path))
+
+    def show_help(self, which):
+        if which == 'viewer':
+            safe_open_url(localize_user_manual_link('https://manual.calibre-ebook.com/viewer.html'))
 
     def repair_after_fullscreen_switch(self):
         self.execute_when_ready('repair_after_fullscreen_switch')

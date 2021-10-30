@@ -5,7 +5,7 @@
 __license__ = 'GPL v3'
 __copyright__ = '2014, Kovid Goyal <kovid at kovidgoyal.net>'
 
-import sys, os, re
+import sys, os, re, textwrap
 from functools import partial
 
 from qt.core import (
@@ -23,7 +23,7 @@ from calibre.gui2.tweak_book.widgets import Dialog
 from calibre.gui2.widgets2 import HistoryLineEdit2
 from calibre.utils.filenames import samefile
 from calibre.utils.icu import numeric_sort_key
-from polyglot.builtins import iteritems, unicode_type, map
+from polyglot.builtins import iteritems
 
 
 class BusyWidget(QWidget):  # {{{
@@ -57,7 +57,7 @@ class BusyWidget(QWidget):  # {{{
 # }}}
 
 
-class Cache(object):
+class Cache:
 
     def __init__(self):
         self._left, self._right = {}, {}
@@ -131,7 +131,7 @@ def get_decoded_raw(name):
 
 
 def string_diff(left, right, left_syntax=None, right_syntax=None, left_name='left', right_name='right'):
-    left, right = unicode_type(left), unicode_type(right)
+    left, right = str(left), str(right)
     cache = Cache()
     cache.set_left(left_name, left), cache.set_right(right_name, right)
     changed_names = {} if left == right else {left_name:right_name}
@@ -297,7 +297,12 @@ class Diff(Dialog):
         self.hl = QHBoxLayout()
         l.addLayout(self.hl, l.rowCount(), 0, 1, -1)
         self.names = QLabel('')
-        self.hl.addWidget(self.names, r)
+        self.hl.addWidget(self.names, stretch=100)
+        if self.show_open_in_editor:
+            self.edit_msg = QLabel(_('Double click right side to edit'))
+            self.edit_msg.setToolTip(textwrap.fill(_(
+                'Double click on any change in the right panel to edit that location in the editor')))
+            self.hl.addWidget(self.edit_msg)
 
         self.bb.setStandardButtons(QDialogButtonBox.StandardButton.Close)
         if self.revert_button_msg is not None:
@@ -306,7 +311,7 @@ class Diff(Dialog):
             b.clicked.connect(self.revert_requested)
             b.clicked.connect(self.reject)
         self.bb.button(QDialogButtonBox.StandardButton.Close).setDefault(True)
-        self.hl.addWidget(self.bb, r)
+        self.hl.addWidget(self.bb)
 
         self.view.setFocus(Qt.FocusReason.OtherFocusReason)
 
@@ -319,7 +324,7 @@ class Diff(Dialog):
                 pass
 
     def do_search(self, reverse):
-        text = unicode_type(self.search.text())
+        text = str(self.search.text())
         if not text.strip():
             return
         v = self.view.view.left if self.lb.isChecked() else self.view.view.right
@@ -363,10 +368,10 @@ class Diff(Dialog):
         QApplication.restoreOverrideCursor()
 
     def set_names(self, names):
+        t = ''
         if isinstance(names, tuple):
-            self.names.setText('%s <--> %s' % names)
-        else:
-            self.names.setText('')
+            t = '%s <--> %s' % names
+        self.names.setText(t)
 
     def ebook_diff(self, path1, path2, names=None):
         self.set_names(names)

@@ -1,4 +1,3 @@
-
 __license__   = 'GPL v3'
 __copyright__ = '2008, Kovid Goyal kovid@kovidgoyal.net'
 __docformat__ = 'restructuredtext en'
@@ -20,7 +19,7 @@ from calibre.ebooks.epub import rules
 from calibre.ebooks.oeb.base import (OEB_STYLES, XPNSMAP as NAMESPACES,
         urldefrag, rewrite_links, XHTML, urlnormalize)
 from calibre.ebooks.oeb.polish.split import do_split
-from polyglot.builtins import iteritems, range, map, unicode_type
+from polyglot.builtins import iteritems
 from polyglot.urllib import unquote
 from css_selectors import Select, SelectorError
 
@@ -43,7 +42,7 @@ class SplitError(ValueError):
                             path=path, size=size))
 
 
-class Split(object):
+class Split:
 
     def __init__(self, split_on_page_breaks=True, page_breaks_xpath=None,
             max_flow_size=0, remove_css_pagebreaks=True):
@@ -123,8 +122,8 @@ class Split(object):
 
         for i, elem in enumerate(item.data.iter('*')):
             try:
-                elem.set('pb_order', unicode_type(i))
-            except TypeError:  # Cant set attributes on comment nodes etc.
+                elem.set('pb_order', str(i))
+            except TypeError:  # Can't set attributes on comment nodes etc.
                 continue
 
         page_breaks = list(page_breaks)
@@ -168,7 +167,7 @@ class Split(object):
         try:
             href = self.current_item.abshref(href)
         except ValueError:
-            # Unparseable URL
+            # Unparsable URL
             return url
         try:
             href = urlnormalize(href)
@@ -186,7 +185,7 @@ class Split(object):
         return url
 
 
-class FlowSplitter(object):
+class FlowSplitter:
     'The actual splitting logic'
 
     def __init__(self, item, page_breaks, page_break_ids, max_flow_size, oeb,

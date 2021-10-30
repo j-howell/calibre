@@ -19,10 +19,10 @@ from calibre.ebooks.mobi.utils import (decode_hex_number, decint,
 from calibre.utils.imghdr import what
 from calibre.ebooks.mobi.debug import format_bytes
 from calibre.ebooks.mobi.debug.headers import TextRecord
-from polyglot.builtins import unicode_type, range, iteritems, as_bytes, print_to_binary_file
+from polyglot.builtins import iteritems, as_bytes, print_to_binary_file
 
 
-class TagX(object):  # {{{
+class TagX:  # {{{
 
     def __init__(self, tag, num_values, bitmask, eof):
         self.tag, self.num_values, self.bitmask, self.eof = (tag, num_values,
@@ -36,7 +36,7 @@ class TagX(object):  # {{{
     # }}}
 
 
-class SecondaryIndexHeader(object):  # {{{
+class SecondaryIndexHeader:  # {{{
 
     def __init__(self, record):
         self.record = record
@@ -133,7 +133,7 @@ class SecondaryIndexHeader(object):  # {{{
 # }}}
 
 
-class IndexHeader(object):  # {{{
+class IndexHeader:  # {{{
 
     def __init__(self, record):
         self.record = record
@@ -235,7 +235,7 @@ class IndexHeader(object):  # {{{
     # }}}
 
 
-class Tag(object):  # {{{
+class Tag:  # {{{
 
     '''
     Index entries are a collection of tags. Each tag is represented by this
@@ -290,7 +290,7 @@ class Tag(object):  # {{{
 # }}}
 
 
-class IndexEntry(object):  # {{{
+class IndexEntry:  # {{{
 
     '''
     The index is made up of entries, each of which is represented by an
@@ -368,7 +368,7 @@ class IndexEntry(object):  # {{{
             self.index, len(self.tags))]
         for tag in self.tags:
             if tag.value is not None:
-                ans.append('\t'+unicode_type(tag))
+                ans.append('\t'+str(tag))
         if self.first_child_index != -1:
             ans.append('\tNumber of children: %d'%(self.last_child_index -
                 self.first_child_index + 1))
@@ -377,7 +377,7 @@ class IndexEntry(object):  # {{{
 # }}}
 
 
-class IndexRecord(object):  # {{{
+class IndexRecord:  # {{{
 
     '''
     Represents all indexing information in the MOBI, apart from indexing info
@@ -421,7 +421,7 @@ class IndexRecord(object):  # {{{
                 len(w), not bool(w.replace(b'\0', b''))))
         for entry in self.indices:
             offset = entry.offset
-            a(unicode_type(entry))
+            a(str(entry))
             t = self.alltext
             if offset is not None and self.alltext is not None:
                 a('\tHTML before offset: %r'%t[offset-50:offset])
@@ -437,7 +437,7 @@ class IndexRecord(object):  # {{{
 # }}}
 
 
-class CNCX(object):  # {{{
+class CNCX:  # {{{
 
     '''
     Parses the records that contain the compiled NCX (all strings from the
@@ -479,7 +479,7 @@ class CNCX(object):  # {{{
 
 # }}}
 
-class ImageRecord(object):  # {{{
+class ImageRecord:  # {{{
 
     def __init__(self, idx, record, fmt):
         self.raw = record.raw
@@ -494,7 +494,7 @@ class ImageRecord(object):  # {{{
 # }}}
 
 
-class BinaryRecord(object):  # {{{
+class BinaryRecord:  # {{{
 
     def __init__(self, idx, record):
         self.raw = record.raw
@@ -514,7 +514,7 @@ class BinaryRecord(object):  # {{{
 # }}}
 
 
-class FontRecord(object):  # {{{
+class FontRecord:  # {{{
 
     def __init__(self, idx, record):
         self.raw = record.raw
@@ -534,7 +534,7 @@ class FontRecord(object):  # {{{
 # }}}
 
 
-class TBSIndexing(object):  # {{{
+class TBSIndexing:  # {{{
 
     def __init__(self, text_records, indices, doc_type):
         self.record_indices = OrderedDict()
@@ -564,7 +564,7 @@ class TBSIndexing(object):  # {{{
 
     def get_index(self, idx):
         for i in self.indices:
-            if i.index in {idx, unicode_type(idx)}:
+            if i.index in {idx, str(idx)}:
                 return i
         raise IndexError('Index %d not found'%idx)
 
@@ -608,7 +608,7 @@ class TBSIndexing(object):  # {{{
             return as_bytes('0'*(4-len(ans)) + ans)
 
         def repr_extra(x):
-            return unicode_type({bin4(k):v for k, v in iteritems(extra)})
+            return str({bin4(k):v for k, v in iteritems(extra)})
 
         tbs_type = 0
         is_periodical = self.doc_type in (257, 258, 259)
@@ -725,7 +725,7 @@ class TBSIndexing(object):  # {{{
 # }}}
 
 
-class MOBIFile(object):  # {{{
+class MOBIFile:  # {{{
 
     def __init__(self, mf):
         for x in ('raw', 'palmdb', 'record_headers', 'records', 'mobi_header',
@@ -789,14 +789,14 @@ class MOBIFile(object):  # {{{
 
     def print_header(self, f=sys.stdout):
         p = print_to_binary_file(f)
-        p(unicode_type(self.palmdb))
+        p(str(self.palmdb))
         p()
         p('Record headers:')
         for i, r in enumerate(self.records):
             p('%6d. %s'%(i, r.header))
 
         p()
-        p(unicode_type(self.mobi_header))
+        p(str(self.mobi_header))
 # }}}
 
 
@@ -822,20 +822,20 @@ def inspect_mobi(mobi_file, ddir):
         f.index_record.alltext = alltext
         with open(os.path.join(ddir, 'index.txt'), 'wb') as out:
             print = print_to_binary_file(out)
-            print(unicode_type(f.index_header), file=out)
+            print(str(f.index_header), file=out)
             print('\n\n', file=out)
             if f.secondary_index_header is not None:
-                print(unicode_type(f.secondary_index_header), file=out)
+                print(str(f.secondary_index_header), file=out)
                 print('\n\n', file=out)
             if f.secondary_index_record is not None:
-                print(unicode_type(f.secondary_index_record), file=out)
+                print(str(f.secondary_index_record), file=out)
                 print('\n\n', file=out)
-            print(unicode_type(f.cncx), file=out)
+            print(str(f.cncx), file=out)
             print('\n\n', file=out)
-            print(unicode_type(f.index_record), file=out)
+            print(str(f.index_record), file=out)
         with open(os.path.join(ddir, 'tbs_indexing.txt'), 'wb') as out:
             print = print_to_binary_file(out)
-            print(unicode_type(f.tbs_indexing), file=out)
+            print(str(f.tbs_indexing), file=out)
         f.tbs_indexing.dump(ddir)
 
     for tdir, attr in [('text', 'text_records'), ('images', 'image_records'),

@@ -157,7 +157,7 @@ def get_func(name):
         module = importlib.import_module(module)
     except ZipImportError:
         # Something windows weird happened, try clearing the zip import cache
-        # incase the zipfile was changed from under us
+        # in case the zipfile was changed from under us
         from zipimport import _zip_directory_cache as zdc
         zdc.clear()
         module = importlib.import_module(module)
@@ -223,11 +223,11 @@ def main():
 
     try:
         sys.stdout.flush()
-    except EnvironmentError:
+    except OSError:
         pass  # Happens sometimes on OS X for GUI processes (EPIPE)
     try:
         sys.stderr.flush()
-    except EnvironmentError:
+    except OSError:
         pass  # Happens sometimes on OS X for GUI processes (EPIPE)
     return 0
 

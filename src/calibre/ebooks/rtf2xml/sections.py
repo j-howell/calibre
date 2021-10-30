@@ -1,4 +1,3 @@
-
 #########################################################################
 #                                                                       #
 #                                                                       #
@@ -15,7 +14,6 @@ import sys, os
 
 from calibre.ebooks.rtf2xml import copy
 from calibre.ptempfile import better_mktemp
-from polyglot.builtins import unicode_type
 
 from . import open_for_read, open_for_write
 
@@ -52,8 +50,8 @@ class Sections:
     between the section tags.
     Start a new section outside the field-block strings. Use the second number in
     the list; use the second item in the description list.
-    CHANGE (2004-04-26) No longer write sections that occurr in field-blocks.
-    Instead, ingore all section information in a field-block.
+    CHANGE (2004-04-26) No longer write sections that occur in field-blocks.
+    Instead, ignore all section information in a field-block.
     """
 
     def __init__(self,
@@ -151,7 +149,7 @@ class Sections:
             nothing
         Logic:
             I need to add the right data to the section values dictionary so I
-            can retrive it later. The attribute (or key) is the name; the
+            can retrieve it later. The attribute (or key) is the name; the
             value is the last part of the text string.
             ex: cw<tb<columns___<nu<2
         """
@@ -207,7 +205,7 @@ class Sections:
             nothing
         Logic:
             I have found a section definition. Check if the line is the end of
-            the defnition (a paragraph defintion), or if it contains info that
+            the defnition (a paragraph definition), or if it contains info that
             should be added to the values dictionary. If neither of these
             cases are true, output the line to a file.
         """
@@ -247,9 +245,9 @@ class Sections:
             nothing
         Logic:
             Text or control words indicating text have been found
-            before \\pard. This shoud indicate older RTF. Reset the state
-            Write the section defintion. Insert a paragraph definition.
-            Insert {} to mark the end of a paragraph defintion
+            before \\pard. This should indicate older RTF. Reset the state
+            Write the section definition. Insert a paragraph definition.
+            Insert {} to mark the end of a paragraph definition
         """
         if not self.__in_field:
             self.__state = 'body'
@@ -276,8 +274,8 @@ class Sections:
             my_string += 'mi<tg<close_____<section\n'
         else:
             self.__found_first_sec = 1
-        my_string += 'mi<tg<open-att__<section<num>%s' % unicode_type(self.__section_num)
-        my_string += '<num-in-level>%s' % unicode_type(self.__section_num)
+        my_string += 'mi<tg<open-att__<section<num>%s' % str(self.__section_num)
+        my_string += '<num-in-level>%s' % str(self.__section_num)
         my_string += '<type>rtf-native'
         my_string += '<level>0'
         keys = self.__section_values.keys()
@@ -359,7 +357,7 @@ class Sections:
                     '<num-in-level>%s'
                     '<type>rtf-native'
                     '<level>0\n'
-                    % (unicode_type(self.__section_num), unicode_type(self.__section_num))
+                    % (str(self.__section_num), str(self.__section_num))
                     )
             self.__found_first_sec = 1
         elif self.__token_info == 'tx<nu<__________':
@@ -370,7 +368,7 @@ class Sections:
                     '<num-in-level>%s'
                     '<type>rtf-native'
                     '<level>0\n'
-                    % (unicode_type(self.__section_num), unicode_type(self.__section_num))
+                    % (str(self.__section_num), str(self.__section_num))
                     )
             self.__write_obj.write(
                 'cw<pf<par-def___<true\n'
@@ -427,7 +425,7 @@ class Sections:
             Change the state.
         """
         # change this 2004-04-26
-        # Don't do anyting
+        # Don't do anything
         """
         self.__sec_in_field_string += line
         self.__print_field_sec_attributes()
@@ -463,7 +461,7 @@ class Sections:
         self.__field_num = self.__field_num[1:]
         self.__write_obj.write(
         'mi<tg<close_____<section\n'
-        'mi<tg<open-att__<section<num>%s' % unicode_type(num)
+        'mi<tg<open-att__<section<num>%s' % str(num)
         )
         if self.__list_of_sec_values:
             keys =  self.__list_of_sec_values[0].keys()
@@ -473,7 +471,7 @@ class Sections:
             self.__list_of_sec_values = self.__list_of_sec_values[1:]
         self.__write_obj.write('<level>0')
         self.__write_obj.write('<type>rtf-native')
-        self.__write_obj.write('<num-in-level>%s' % unicode_type(self.__section_num))
+        self.__write_obj.write('<num-in-level>%s' % str(self.__section_num))
         self.__write_obj.write('\n')
         # Look here
 

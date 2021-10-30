@@ -6,13 +6,13 @@ __license__ = 'GPL v3'
 __copyright__ = '2013, Kovid Goyal <kovid at kovidgoyal.net>'
 
 import copy, os, re
-from polyglot.builtins import map, string_or_bytes, range
+from polyglot.builtins import string_or_bytes
 
 from calibre.ebooks.oeb.base import barename, XPNSMAP, XPath, OPF, XHTML, OEB_DOCS
 from calibre.ebooks.oeb.polish.errors import MalformedMarkup
 from calibre.ebooks.oeb.polish.toc import node_from_loc
 from calibre.ebooks.oeb.polish.replace import LinkRebaser
-from polyglot.builtins import iteritems, unicode_type
+from polyglot.builtins import iteritems
 from polyglot.urllib import urlparse
 
 
@@ -149,7 +149,7 @@ def do_split(split_point, log, before=True):
     return tree, tree2
 
 
-class SplitLinkReplacer(object):
+class SplitLinkReplacer:
 
     def __init__(self, base, bottom_anchors, top_name, bottom_name, container):
         self.bottom_anchors, self.bottom_name = bottom_anchors, bottom_name
@@ -184,7 +184,7 @@ def split(container, name, loc_or_xpath, before=True, totals=None):
     '''
 
     root = container.parsed(name)
-    if isinstance(loc_or_xpath, unicode_type):
+    if isinstance(loc_or_xpath, str):
         split_point = root.xpath(loc_or_xpath)[0]
     else:
         try:
@@ -282,7 +282,7 @@ def multisplit(container, name, xpath, before=True):
             raise AbortError('Cannot split on the <body> tag')
 
     for i, tag in enumerate(nodes):
-        tag.set('calibre-split-point', unicode_type(i))
+        tag.set('calibre-split-point', str(i))
 
     current = name
     all_names = [name]
@@ -298,7 +298,7 @@ def multisplit(container, name, xpath, before=True):
     return all_names[1:]
 
 
-class MergeLinkReplacer(object):
+class MergeLinkReplacer:
 
     def __init__(self, base, anchor_map, master, container):
         self.container, self.anchor_map = container, anchor_map

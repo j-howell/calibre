@@ -1,4 +1,3 @@
-
 #########################################################################
 #                                                                       #
 #                                                                       #
@@ -26,7 +25,6 @@ from calibre.ebooks.rtf2xml import headings_to_sections, \
     body_styles, preamble_rest, group_styles, \
     inline
 from calibre.ebooks.rtf2xml.old_rtf import OldRtf
-from polyglot.builtins import unicode_type
 
 from . import open_for_read, open_for_write
 
@@ -44,7 +42,7 @@ def Handle_Main():
             # determine the run level. The default is 1.
             run_level = 3,
             # The name of a debug directory, if you are running at
-            # run level 3 or higer.
+            # run level 3 or higher.
             debug = 'debug_dir',
             # Convert RTF caps to real caps.
             # Default is 1.
@@ -124,7 +122,7 @@ class ParseRtf:
             'output' --a file to output the parsed file. (Default is standard
             output.)
             'temp_dir' --directory for temporary output (If not provided, the
-            script tries to output to directory where is script is exectued.)
+            script tries to output to directory where is script is executed.)
             'deb_dir' --debug directory. If a debug_dir is provided, the script
             will copy each run through as a file to examine in the debug_dir
             'check_brackets' -- make sure the brackets match up after each run
@@ -250,7 +248,7 @@ class ParseRtf:
             enc = encode_obj.get_codepage()
             # TODO: to check if cp is a good idea or if I should use a dict to convert
             enc = 'cp' + enc
-            msg = '%s\nException in token processing' % unicode_type(msg)
+            msg = '%s\nException in token processing' % str(msg)
             if check_encoding_obj.check_encoding(self.__file, enc):
                 file_name = self.__file if isinstance(self.__file, bytes) \
                                     else self.__file.encode('utf-8')

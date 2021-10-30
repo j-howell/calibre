@@ -35,7 +35,7 @@ class NoAutoReload(EnvironmentError):
 # Filesystem watcher {{{
 
 
-class WatcherBase(object):
+class WatcherBase:
 
     EXTENSIONS_TO_WATCH = frozenset('py pyj svg'.split())
     BOUNCE_INTERVAL = 2  # seconds
@@ -237,7 +237,7 @@ def join_process(p, timeout=5):
     return p.poll()
 
 
-class Worker(object):
+class Worker:
 
     def __init__(self, cmd, log, server, timeout=5):
         self.cmd = cmd
@@ -297,7 +297,7 @@ class Worker(object):
             self.retry_count = 0
         try:
             compile_srv()
-        except EnvironmentError as e:
+        except OSError as e:
             # Happens if the editor deletes and replaces a file being edited
             if e.errno != errno.ENOENT or not getattr(e, 'filename', False):
                 raise
@@ -327,7 +327,7 @@ class Worker(object):
                     s = ssl.wrap_socket(s)
                 s.connect(('localhost', self.port))
                 return
-            except socket.error:
+            except OSError:
                 time.sleep(0.01)
             finally:
                 s.close()

@@ -1,4 +1,3 @@
-
 #########################################################################
 #                                                                       #
 #                                                                       #
@@ -15,7 +14,6 @@ import sys, os
 
 from calibre.ebooks.rtf2xml import copy, border_parse
 from calibre.ptempfile import better_mktemp
-from polyglot.builtins import unicode_type
 
 from . import open_for_read, open_for_write
 
@@ -29,8 +27,8 @@ States.
     2. 'mi<mk<not-in-tbl', end the table.
     3. 'cw<tb<row-def___' start a row definition
 3. in_row_definition
-    1.  'mi<mk<not-in-tbl'  :   end the row defintion. If in table, end the table.
-    2.  'mi<mk<pard-start'  :   end the row defintion
+    1.  'mi<mk<not-in-tbl'  :   end the row definition. If in table, end the table.
+    2.  'mi<mk<pard-start'  :   end the row definition
         if already in the table, start a row and cell.
     3.  'cw<tb<row_______'  : end the row definition, end the row
     4.  'cw...' use another method to handle the control word
@@ -299,7 +297,7 @@ class Table:
             the tokens in the row definition contain the following information:
                1. row borders.
                2. cell borders for all cells in the row.
-               3. cell postions for all cells in the row.
+               3. cell positions for all cells in the row.
             Put all information about row borders into a row dictionary.
             Put all information about cell borders into into the dictionary in
             the last item in the cell list. ([{border:something, width:something},
@@ -400,13 +398,13 @@ class Table:
             left_position = float(left_position)
         width = new_cell_position - self.__last_cell_position - left_position
         # width = round(width, 2)
-        width = unicode_type('%.2f' % width)
+        width = '%.2f' % width
         self.__last_cell_position = new_cell_position
         widths_exists = self.__row_dict.get('widths')
         if widths_exists:
-            self.__row_dict['widths'] += ', %s' % unicode_type(width)
+            self.__row_dict['widths'] += ', %s' % str(width)
         else:
-            self.__row_dict['widths'] = unicode_type(width)
+            self.__row_dict['widths'] = str(width)
         self.__cell_list[-1]['width'] = width
         self.__cell_list.append({})
         self.__cell_widths.append(width)
@@ -501,7 +499,7 @@ class Table:
             nothing
         Logic:
             Write an empty tag with attributes if there are attributes.
-            Otherwise, writen an empty tag with cell as element.
+            Otherwise, written an empty tag with cell as element.
         """
         if len(self.__cell_list) > 0:
             self.__write_obj.write('mi<tg<empty-att_<cell')

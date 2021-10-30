@@ -10,7 +10,6 @@ from struct import pack
 from collections import OrderedDict
 
 from calibre.utils.fonts.sfnt.cff.constants import cff_standard_strings
-from polyglot.builtins import range
 
 
 class Index(list):
@@ -76,7 +75,7 @@ class Dict(Index):
         Index.compile(self)
 
 
-class PrivateDict(object):
+class PrivateDict:
 
     def __init__(self, src, subrs, strings):
         self.src, self.strings = src, strings
@@ -109,7 +108,7 @@ class Charsets(list):
         return ans
 
 
-class Subset(object):
+class Subset:
 
     def __init__(self, cff, keep_charnames):
         self.cff = cff

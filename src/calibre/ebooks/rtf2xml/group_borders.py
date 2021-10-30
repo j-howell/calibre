@@ -1,4 +1,3 @@
-
 #########################################################################
 #                                                                       #
 #                                                                       #
@@ -214,7 +213,7 @@ class GroupBorders:
         Returns:
             Nothing
         Logic
-            Look for the start of a paragraph defintion. If one is found, check if
+            Look for the start of a paragraph definition. If one is found, check if
             it contains a list-id. If it does, start a list. Change the state to
             in_pard.
             """

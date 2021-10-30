@@ -14,7 +14,7 @@ from calibre.customize import CatalogPlugin
 from calibre.library.catalogs import FIELDS, TEMPLATE_ALLOWED_FIELDS
 from calibre.customize.conversion import DummyReporter
 from calibre.ebooks.metadata import format_isbn
-from polyglot.builtins import filter, string_or_bytes, unicode_type
+from polyglot.builtins import string_or_bytes
 
 
 class BIBTEX(CatalogPlugin):
@@ -248,7 +248,7 @@ class BIBTEX(CatalogPlugin):
                     elif tpl_field in ['tags', 'authors'] :
                         tpl_field =entry[tpl_field][0]
                     elif tpl_field in ['id', 'series_index'] :
-                        tpl_field = unicode_type(entry[tpl_field])
+                        tpl_field = str(entry[tpl_field])
                     else :
                         tpl_field = entry[tpl_field]
                     return ascii_text(tpl_field)
@@ -267,7 +267,7 @@ class BIBTEX(CatalogPlugin):
                 template_citation = '%s' % re.sub(r'[\D]','', entry["isbn"])
 
             else :
-                template_citation = '%s' % unicode_type(entry["id"])
+                template_citation = '%s' % str(entry["id"])
 
             return bibtexclass.ValidateCitationKey(template_citation)
 
@@ -279,7 +279,7 @@ class BIBTEX(CatalogPlugin):
         bibfile_enctag = ['strict', 'replace', 'ignore', 'backslashreplace']
         bib_entry = ['mixed', 'misc', 'book']
 
-        # Needed beacause CLI return str vs int by widget
+        # Needed because CLI return str vs int by widget
         try:
             bibfile_enc = bibfile_enc[opts.bibfile_enc]
             bibfile_enctag = bibfile_enctag[opts.bibfile_enctag]
@@ -342,7 +342,7 @@ class BIBTEX(CatalogPlugin):
         # Initialize BibTeX class
         bibtexc = BibTeX()
 
-        # Entries writing after Bibtex formating (or not)
+        # Entries writing after Bibtex formatting (or not)
         if bibfile_enc != 'ascii' :
             bibtexc.ascii_bibtex = False
         else :

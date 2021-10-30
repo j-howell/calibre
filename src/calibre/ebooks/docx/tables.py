@@ -9,7 +9,7 @@ from lxml.html.builder import TABLE, TR, TD
 
 from calibre.ebooks.docx.block_styles import inherit, read_shd as rs, read_border, binary_property, border_props, ParagraphStyle, border_to_css
 from calibre.ebooks.docx.char_styles import RunStyle
-from polyglot.builtins import filter, iteritems, itervalues, range, unicode_type
+from polyglot.builtins import iteritems, itervalues
 
 # Read from XML {{{
 read_shd = rs
@@ -174,7 +174,7 @@ def clone(style):
     return ans
 
 
-class Style(object):
+class Style:
 
     is_bidi = False
 
@@ -375,7 +375,7 @@ class TableStyle(Style):
         return self._css
 
 
-class Table(object):
+class Table:
 
     def __init__(self, namespace, tbl, styles, para_map, is_sub_table=False):
         self.namespace = namespace
@@ -615,11 +615,9 @@ class Table(object):
                         tc.getparent().remove(tc)
 
     def __iter__(self):
-        for p in self.paragraphs:
-            yield p
+        yield from self.paragraphs
         for t in itervalues(self.sub_tables):
-            for p in t:
-                yield p
+            yield from t
 
     def apply_markup(self, rmap, page, parent=None):
         table = TABLE('\n\t\t')
@@ -646,9 +644,9 @@ class Table(object):
                 td = TD()
                 style_map[td] = s = self.style_map[tc]
                 if s.col_span is not inherit:
-                    td.set('colspan', unicode_type(s.col_span))
+                    td.set('colspan', str(s.col_span))
                 if s.row_span is not inherit:
-                    td.set('rowspan', unicode_type(s.row_span))
+                    td.set('rowspan', str(s.row_span))
                 td.tail = '\n\t\t\t'
                 tr.append(td)
                 for x in self.namespace.XPath('./w:p|./w:tbl')(tc):
@@ -670,7 +668,7 @@ class Table(object):
                 elem.set('class', self.styles.register(css, elem.tag))
 
 
-class Tables(object):
+class Tables:
 
     def __init__(self, namespace):
         self.tables = []

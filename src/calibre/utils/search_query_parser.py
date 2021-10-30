@@ -23,7 +23,7 @@ import weakref, re
 from calibre.constants import preferred_encoding
 from calibre.utils.icu import sort_key
 from calibre import prints
-from polyglot.builtins import codepoint_to_chr, unicode_type
+from polyglot.builtins import codepoint_to_chr
 
 
 '''
@@ -33,7 +33,7 @@ adding other fields, such as whether the search is a 'favorite'
 '''
 
 
-class SavedSearchQueries(object):
+class SavedSearchQueries:
     queries = {}
     opt_name = ''
 
@@ -57,7 +57,7 @@ class SavedSearchQueries(object):
             db.set_pref(self.opt_name, self.queries)
 
     def force_unicode(self, x):
-        if not isinstance(x, unicode_type):
+        if not isinstance(x, str):
             x = x.decode(preferred_encoding, 'replace')
         return x
 
@@ -139,7 +139,7 @@ base_token ::= a sequence of letters and colons, perhaps quoted
 '''
 
 
-class Parser(object):
+class Parser:
 
     def __init__(self):
         self.current_token = 0
@@ -154,8 +154,8 @@ class Parser(object):
     # Had to translate named constants to numeric values
     lex_scanner = re.Scanner([
             (r'[()]', lambda x,t: (Parser.OPCODE, t)),
-            (r'@.+?:[^")\s]+', lambda x,t: (Parser.WORD, unicode_type(t))),
-            (r'[^"()\s]+', lambda x,t: (Parser.WORD, unicode_type(t))),
+            (r'@.+?:[^")\s]+', lambda x,t: (Parser.WORD, str(t))),
+            (r'[^"()\s]+', lambda x,t: (Parser.WORD, str(t))),
             (r'".*?((?<!\\)")', lambda x,t: (Parser.QUOTED_WORD, t[1:-1])),
             (r'\s+',              None)
     ], flags=re.DOTALL)
@@ -286,7 +286,7 @@ class ParseException(Exception):
         return ""
 
 
-class SearchQueryParser(object):
+class SearchQueryParser:
     '''
     Parses a search query.
 

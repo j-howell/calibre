@@ -1,4 +1,3 @@
-
 '''
 Created on 23 Sep 2010
 
@@ -15,12 +14,13 @@ from math import modf
 
 from calibre import prints
 from calibre.constants import DEBUG
+from calibre.ebooks.metadata.book.base import field_metadata
 from calibre.utils.formatter_functions import formatter_functions
 from calibre.utils.icu import strcmp
-from polyglot.builtins import unicode_type, error_message
+from polyglot.builtins import error_message
 
 
-class Node(object):
+class Node:
     NODE_RVALUE = 1
     NODE_IF = 2
     NODE_ASSIGN = 3
@@ -255,7 +255,7 @@ class CharacterNode(Node):
         self.expression = expression
 
 
-class _Parser(object):
+class _Parser:
     LEX_OP = 1
     LEX_ID = 2
     LEX_CONST = 3
@@ -539,8 +539,8 @@ class _Parser(object):
                              lambda ln, args: IfNode(ln, args[0], (args[1],), (args[2],))),
         'first_non_empty':  (lambda args: len(args) == 1,
                              lambda ln, args: FirstNonEmptyNode(ln, args)),
-        'assign':           (lambda args: len(args) == 2 and args[0].node_type == Node.NODE_RVALUE,
-                             lambda ln, args: AssignNode(ln, args[0].name, args[1])),
+        'assign':           (lambda args: len(args) == 2 and len(args[0]) == 1 and args[0][0].node_type == Node.NODE_RVALUE,
+                             lambda ln, args: AssignNode(ln, args[0][0].name, args[1])),
         'contains':         (lambda args: len(args) == 4,
                              lambda ln, args: ContainsNode(ln, args)),
         'character':        (lambda args: len(args) == 1,
@@ -677,7 +677,7 @@ class StopException(Exception):
         super().__init__('Template evaluation stopped')
 
 
-class _Interpreter(object):
+class _Interpreter:
     def error(self, message, line_number):
         m = _('Interpreter: {0} - line number {1}').format(message, line_number)
         raise ValueError(m)
@@ -890,6 +890,7 @@ class _Interpreter(object):
     def do_node_raw_field(self, prog):
         try:
             name = self.expr(prog.expression)
+            name = field_metadata.search_term_to_field_key(name)
             res = getattr(self.parent_book, name, None)
             if res is None and prog.default is not None:
                 res = self.expr(prog.default)
@@ -904,9 +905,9 @@ class _Interpreter(object):
                     else:
                         res = fm['is_multiple']['list_to_ui'].join(res)
                 else:
-                    res = unicode_type(res)
+                    res = str(res)
             else:
-                res = unicode_type(res)  # Should be the string "None"
+                res = str(res)  # Should be the string "None"
             if (self.break_reporter):
                 self.break_reporter(prog.node_name, res, prog.line_number)
             return res
@@ -1042,7 +1043,7 @@ class _Interpreter(object):
         try:
             answer = self.ARITHMETIC_BINARY_OPS[prog.operator](float(self.expr(prog.left)),
                                                                float(self.expr(prog.right)))
-            res = unicode_type(answer if modf(answer)[0] != 0 else int(answer))
+            res = str(answer if modf(answer)[0] != 0 else int(answer))
             if (self.break_reporter):
                 self.break_reporter(prog.node_name, res, prog.line_number)
             return res
@@ -1060,7 +1061,7 @@ class _Interpreter(object):
     def do_node_unary_arithop(self, prog):
         try:
             expr = self.ARITHMETIC_UNARY_OPS[prog.operator](float(self.expr(prog.expr)))
-            res = unicode_type(expr if modf(expr)[0] != 0 else int(expr))
+            res = str(expr if modf(expr)[0] != 0 else int(expr))
             if (self.break_reporter):
                 self.break_reporter(prog.node_name, res, prog.line_number)
             return res
@@ -1185,7 +1186,7 @@ class TemplateFormatter(string.Formatter):
             except:
                 raise ValueError(
                     _('format: type {0} requires a decimal (float) value, got {1}').format(typ, val))
-        return unicode_type(('{0:'+fmt+'}').format(val))
+        return str(('{0:'+fmt+'}').format(val))
 
     def _explode_format_string(self, fmt):
         try:
@@ -1259,7 +1260,7 @@ class TemplateFormatter(string.Formatter):
         # ensure we are dealing with a string.
         if isinstance(val, numbers.Number):
             if val:
-                val = unicode_type(val)
+                val = str(val)
             else:
                 val = ''
         # Handle conditional text
@@ -1383,7 +1384,7 @@ class TemplateFormatter(string.Formatter):
 
     @property
     def gpm_interpreter(self):
-        if len(self._interpreters) <= self.recursion_level:
+        while len(self._interpreters) <= self.recursion_level:
             self._interpreters.append(_Interpreter())
         return self._interpreters[self.recursion_level]
 

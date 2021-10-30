@@ -17,11 +17,11 @@ from calibre.utils.date import isoformat, UNDEFINED_DATE, local_tz
 from calibre.utils.config import tweaks
 from calibre.utils.formatter import EvalFormatter
 from calibre.utils.file_type_icons import EXT_MAP
-from calibre.utils.icu import collation_order
+from calibre.utils.icu import collation_order_for_partitioning
 from calibre.utils.localization import calibre_langcode_to_name
 from calibre.library.comments import comments_to_html, markdown
 from calibre.library.field_metadata import category_icon_map
-from polyglot.builtins import iteritems, itervalues, range, filter, unicode_type
+from polyglot.builtins import iteritems, itervalues
 from polyglot.urllib import quote
 
 IGNORED_FIELDS = frozenset('cover ondevice path marked au_map'.split())
@@ -116,7 +116,7 @@ def category_as_json(items, category, display_name, count, tooltip=None, parent=
         ans['is_user_category'] = True
     if is_first_letter:
         ans['is_first_letter'] = True
-    item_id = 'c' + unicode_type(len(items))
+    item_id = 'c' + str(len(items))
     items[item_id] = ans
     return item_id
 
@@ -146,7 +146,7 @@ CategoriesSettings = namedtuple(
     ' template using_hierarchy grouped_search_terms hidden_categories hide_empty_categories')
 
 
-class GroupedSearchTerms(object):
+class GroupedSearchTerms:
 
     __slots__ = ('keys', 'vals', 'hash')
 
@@ -291,7 +291,7 @@ def build_first_letter_list(category_items):
             c = ' '
         else:
             c = icu_upper(tag.sort)
-        ordnum, ordlen = collation_order(c)
+        ordnum, ordlen = collation_order_for_partitioning(c)
         if last_ordnum != ordnum:
             last_c = c[0:ordlen]
             last_ordnum = ordnum
@@ -333,7 +333,7 @@ def collapse_partition(collapse_nodes, items, category_node, idx, tag, opts, top
         if not name.startswith('##TAG_VIEW##'):
             # Formatter succeeded
             node_id = category_as_json(
-                items, items[category_node['id']].category, name, 0,
+                items, items[category_node['id']]['category'], name, 0,
                 parent=category_node['id'], is_editable=False, is_gst=is_gst,
                 is_hierarchical=category_is_hierarchical, is_searchable=False)
             node_parent = {'id':node_id, 'children':[]}
@@ -476,8 +476,7 @@ def process_category_node(
 def iternode_descendants(node):
     for child in node['children']:
         yield child
-        for x in iternode_descendants(child):
-            yield x
+        yield from iternode_descendants(child)
 
 
 def fillout_tree(root, items, node_id_map, category_nodes, category_data, field_metadata, opts, book_rating_map):

@@ -1,5 +1,3 @@
-
-
 __license__   = 'GPL v3'
 __copyright__ = '2008, Kovid Goyal <kovid at kovidgoyal.net>'
 
@@ -20,8 +18,9 @@ import xml.dom.minidom as dom
 from functools import wraps
 
 from calibre.ebooks.chardet import xml_to_unicode
+from calibre.utils.cleantext import clean_xml_chars
 from calibre.ebooks.metadata import MetaInformation, string_to_authors
-from polyglot.builtins import unicode_type, string_or_bytes
+from polyglot.builtins import string_or_bytes
 
 BYTE      = "<B"  #: Unsigned char little endian encoded in 1 byte
 WORD      = "<H"  #: Unsigned short little endian encoded in 2 bytes
@@ -29,7 +28,7 @@ DWORD     = "<I"  #: Unsigned integer little endian encoded in 4 bytes
 QWORD     = "<Q"  #: Unsigned long long little endian encoded in 8 bytes
 
 
-class field(object):
+class field:
     """ A U{Descriptor<http://www.cafepy.com/article/python_attributes_and_methods/python_attributes_and_methods.html>}, that implements access
     to protocol packets in a human readable way.
     """
@@ -51,8 +50,8 @@ class field(object):
     def __repr__(self):
         typ = {DWORD: 'unsigned int', 'QWORD': 'unsigned long long', BYTE: 'unsigned char', WORD: 'unsigned short'}.get(self._fmt, '')
         return "An " + typ + " stored in " + \
-        unicode_type(struct.calcsize(self._fmt)) + \
-        " bytes starting at byte " + unicode_type(self._start)
+        str(struct.calcsize(self._fmt)) + \
+        " bytes starting at byte " + str(self._start)
 
 
 class versioned_field(field):
@@ -81,7 +80,7 @@ class LRFException(Exception):
     pass
 
 
-class fixed_stringfield(object):
+class fixed_stringfield:
     """ A field storing a variable length string. """
 
     def __init__(self, length=8, start=0):
@@ -93,25 +92,25 @@ class fixed_stringfield(object):
         self._start = start
 
     def __get__(self, obj, typ=None):
-        length = unicode_type(self._length)
+        length = str(self._length)
         return obj.unpack(start=self._start, fmt="<"+length+"s")[0]
 
     def __set__(self, obj, val):
         if not isinstance(val, string_or_bytes):
-            val = unicode_type(val)
-        if isinstance(val, unicode_type):
+            val = str(val)
+        if isinstance(val, str):
             val = val.encode('utf-8')
         if len(val) != self._length:
             raise LRFException("Trying to set fixed_stringfield with a " +
                                "string of  incorrect length")
-        obj.pack(val, start=self._start, fmt="<"+unicode_type(len(val))+"s")
+        obj.pack(val, start=self._start, fmt="<"+str(len(val))+"s")
 
     def __repr__(self):
-        return "A string of length " + unicode_type(self._length) + \
-                " starting at byte " + unicode_type(self._start)
+        return "A string of length " + str(self._length) + \
+                " starting at byte " + str(self._start)
 
 
-class xml_attr_field(object):
+class xml_attr_field:
 
     def __init__(self, tag_name, attr, parent='BookInfo'):
         self.tag_name = tag_name
@@ -152,7 +151,7 @@ class xml_attr_field(object):
         return self.tag_name+'.'+self.attr
 
 
-class xml_field(object):
+class xml_field:
     """
     Descriptor that gets and sets XML based meta information from an LRF file.
     Works for simple XML fields of the form <tagname>data</tagname>
@@ -195,7 +194,7 @@ class xml_field(object):
 
         if not val:
             val = ''
-        if not isinstance(val, unicode_type):
+        if not isinstance(val, str):
             val = val.decode('utf-8')
 
         elems = document.getElementsByTagName(self.tag_name)
@@ -299,7 +298,7 @@ def get_metadata(stream):
     return mi
 
 
-class LRFMetaFile(object):
+class LRFMetaFile:
     """ Has properties to read and write all Meta information in a LRF file. """
     #: The first 6 bytes of all valid LRF files
     LRF_HEADER = 'LRF'.encode('utf-16le')
@@ -400,7 +399,7 @@ class LRFMetaFile(object):
                                         yielded unexpected results")
 
                 src = xml_to_unicode(src, strip_encoding_pats=True, resolve_entities=True, assume_utf8=True)[0]
-                return dom.parseString(src)
+                return dom.parseString(clean_xml_chars(src))
             except zlib.error:
                 raise LRFException("Unable to decompress document meta information")
 
@@ -725,8 +724,8 @@ def main(args=sys.argv):
     fields = LRFMetaFile.__dict__.items()
     fields.sort()
     for f in fields:
-        if "XML" in unicode_type(f):
-            print(unicode_type(f[1]) + ":", lrf.__getattribute__(f[0]).encode('utf-8'))
+        if "XML" in str(f):
+            print(str(f[1]) + ":", lrf.__getattribute__(f[0]).encode('utf-8'))
     if options.get_thumbnail:
         print("Thumbnail:", td)
     if options.get_cover:

@@ -31,7 +31,7 @@ from calibre.gui2.library.caches import CoverCache, ThumbnailCache
 from calibre.gui2.pin_columns import PinContainer
 from calibre.utils import join_with_timeout
 from calibre.utils.config import prefs, tweaks
-from polyglot.builtins import itervalues, range, unicode_type
+from polyglot.builtins import itervalues
 from polyglot.queue import LifoQueue
 
 CM_TO_INCH = 0.393701
@@ -288,7 +288,7 @@ def sync(func):
     return ans
 
 
-class AlternateViews(object):
+class AlternateViews:
 
     def __init__(self, main_view):
         self.views = {None:main_view}
@@ -397,7 +397,7 @@ class CoverDelegate(QStyledItemDelegate):
         self._animated_size = val
 
     def __init__(self, parent):
-        super(CoverDelegate, self).__init__(parent)
+        super().__init__(parent)
         self._animated_size = 1.0
         self.animation = QPropertyAnimation(self, b'animated_size', self)
         self.animation.setEasingCurve(QEasingCurve.Type.OutInCirc)
@@ -470,7 +470,7 @@ class CoverDelegate(QStyledItemDelegate):
                 if fm and fm['datatype'] == 'rating':
                     ans = rating_to_stars(val, fm['display'].get('allow_half_stars', False))
                     is_stars = True
-            return ('' if ans is None else unicode_type(ans)), is_stars
+            return ('' if ans is None else str(ans)), is_stars
         except Exception:
             if DEBUG:
                 import traceback
@@ -976,7 +976,7 @@ class GridView(QListView):
                 newdb.new_api.add_cover_cache(x)
             try:
                 # Use a timeout so that if, for some reason, the render thread
-                # gets stuck, we dont deadlock, future covers wont get
+                # gets stuck, we dont deadlock, future covers won't get
                 # rendered, but this is better than a deadlock
                 join_with_timeout(self.delegate.render_queue)
             except RuntimeError:
@@ -1153,7 +1153,7 @@ class GridView(QListView):
     def selectionCommand(self, index, event):
         if event and event.type() == QEvent.Type.KeyPress and event.key() in (Qt.Key.Key_Home, Qt.Key.Key_End) and event.modifiers() & Qt.Modifier.CTRL:
             return QItemSelectionModel.SelectionFlag.ClearAndSelect | QItemSelectionModel.SelectionFlag.Rows
-        return super(GridView, self).selectionCommand(index, event)
+        return super().selectionCommand(index, event)
 
     def wheelEvent(self, ev):
         if ev.phase() not in (Qt.ScrollPhase.ScrollUpdate, 0, Qt.ScrollPhase.ScrollMomentum):
@@ -1179,6 +1179,6 @@ class GridView(QListView):
         if size_changed:
             self.delegate.cover_cache.clear()
 
-        return super(GridView, self).paintEvent(ev)
+        return super().paintEvent(ev)
 
 # }}}

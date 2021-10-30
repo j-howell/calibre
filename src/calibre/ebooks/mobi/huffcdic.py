@@ -14,10 +14,9 @@ and igorsk.
 import struct
 
 from calibre.ebooks.mobi import MobiError
-from polyglot.builtins import map
 
 
-class Reader(object):
+class Reader:
 
     def __init__(self):
         self.q = struct.Struct(b'>Q').unpack_from
@@ -96,7 +95,7 @@ class Reader(object):
         return b''.join(s)
 
 
-class HuffReader(object):
+class HuffReader:
 
     def __init__(self, huffs):
         self.reader = Reader()

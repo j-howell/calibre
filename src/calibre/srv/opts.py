@@ -21,7 +21,7 @@ Option = namedtuple('Option', 'name default longdoc shortdoc choices')
 class Choices(frozenset):
 
     def __new__(cls, *args):
-        self = super(Choices, cls).__new__(cls, args)
+        self = super().__new__(cls, args)
         self.default = args[0]
         return self
 
@@ -220,7 +220,7 @@ options = OrderedDict([(o.name, o) for o in sorted(options, key=attrgetter('name
 del raw_options
 
 
-class Options(object):
+class Options:
 
     __slots__ = tuple(name for name in options)
 
@@ -276,7 +276,7 @@ def parse_config_file(path=DEFAULT_CONFIG):
     try:
         with ExclusiveFile(path) as f:
             raw = f.read().decode('utf-8')
-    except EnvironmentError as err:
+    except OSError as err:
         if err.errno != errno.ENOENT:
             raise
         raw = ''

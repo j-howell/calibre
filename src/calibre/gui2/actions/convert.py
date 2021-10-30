@@ -91,7 +91,7 @@ class ConvertAction(InterfaceAction):
         of = prefs['output_format'].lower()
         for book_id in book_ids:
             fmts = db.formats(book_id, index_is_id=True)
-            fmts = set(x.lower() for x in fmts.split(',')) if fmts else set()
+            fmts = {x.lower() for x in fmts.split(',')} if fmts else set()
             if gprefs['auto_convert_same_fmt'] or of not in fmts:
                 needed.add(book_id)
         if needed:
@@ -160,7 +160,15 @@ class ConvertAction(InterfaceAction):
             return
         self.do_convert(book_ids, bulk=bulk)
 
-    def do_convert(self, book_ids, bulk=None):
+    def convert_ebooks_to_format(self, book_ids, to_fmt):
+        from calibre.customize.ui import available_output_formats
+        to_fmt = to_fmt.upper()
+        if to_fmt.lower() not in available_output_formats():
+            return error_dialog(self.gui, _('Cannot convert'), _(
+                'Conversion to the {} format is not supported').format(to_fmt), show=True)
+        self.do_convert(book_ids, output_fmt=to_fmt, auto_conversion=True)
+
+    def do_convert(self, book_ids, bulk=None, auto_conversion=False, output_fmt=None):
         previous = self.gui.library_view.currentIndex()
         rows = [x.row() for x in
                 self.gui.library_view.selectionModel().selectedRows()]
@@ -168,14 +176,14 @@ class ConvertAction(InterfaceAction):
         if bulk or (bulk is None and len(book_ids) > 1):
             self.__bulk_queue = convert_bulk_ebook(self.gui, self.queue_convert_jobs,
                 self.gui.library_view.model().db, book_ids,
-                out_format=prefs['output_format'], args=(rows, previous,
+                out_format=output_fmt or prefs['output_format'], args=(rows, previous,
                     self.book_converted))
             if self.__bulk_queue is None:
                 return
             num = len(self.__bulk_queue.book_ids)
         else:
             jobs, changed, bad = convert_single_ebook(self.gui,
-                self.gui.library_view.model().db, book_ids, out_format=prefs['output_format'])
+                self.gui.library_view.model().db, book_ids, out_format=output_fmt or prefs['output_format'], auto_conversion=auto_conversion)
             self.queue_convert_jobs(jobs, changed, bad, rows, previous,
                     self.book_converted)
             num = len(jobs)

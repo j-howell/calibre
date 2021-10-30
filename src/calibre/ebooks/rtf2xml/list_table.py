@@ -1,4 +1,3 @@
-
 #########################################################################
 #                                                                       #
 #                                                                       #
@@ -11,8 +10,6 @@
 #                                                                       #
 #                                                                       #
 #########################################################################
-
-from polyglot.builtins import unicode_type
 
 
 class ListTable:
@@ -217,7 +214,7 @@ class ListTable:
             nothing
         Logic:
             Check for the end of the group.
-            Otherwise, if the token is hexidecimal, create an attribute.
+            Otherwise, if the token is hexadecimal, create an attribute.
             Do so by finding the base-10 value of the number. Then divide
             this by 2 and round it. Remove the ".0". Sandwwhich the result to
             give you something like level1-show-level.
@@ -235,7 +232,7 @@ class ListTable:
             """
             num = line[18:]
             num = int(num, 16)
-            level = unicode_type(round((num - 1)/2, 0))
+            level = str(round((num - 1)/2, 0))
             level = level[:-2]
             level = 'level%s-show-level' % level
             self.__all_lists[-1][-1][0][level] = 'true'
@@ -249,9 +246,9 @@ class ListTable:
             nothing
         Logic:
             Check for the end of the group.
-            Otherwise, if the text is hexidecimal, call on the method
+            Otherwise, if the text is hexadecimal, call on the method
             __parse_level_text_length.
-            Otheriwse, if the text is regular text, create an attribute.
+            Otherwise, if the text is regular text, create an attribute.
             This attribute indicates the puncuation after a certain level.
             An example is "level1-marker = '.'"
             Otherwise, check for a level-template-id.
@@ -283,7 +280,7 @@ class ListTable:
     def __parse_level_text_length(self, line):
         """
         Requires:
-            line --line with hexidecimal number
+            line --line with hexadecimal number
         Returns:
             nothing
         Logic:
@@ -292,11 +289,11 @@ class ListTable:
         num = line[18:]
         the_num = int(num, 16)
         if not self.__found_level_text_length:
-            self.__all_lists[-1][-1][0]['list-text-length'] = unicode_type(the_num)
+            self.__all_lists[-1][-1][0]['list-text-length'] = str(the_num)
             self.__found_level_text_length = 1
         else:
             the_num += 1
-            the_string = unicode_type(the_num)
+            the_string = str(the_num)
             level_marker = 'level%s-suffix' % the_string
             show_marker = 'show-level%s' % the_string
             self.__level_text_position = level_marker
@@ -373,7 +370,7 @@ class ListTable:
             a list-in-table tag. Get the dictionary of this list
             (the first item). Print out the key => value pair.
             Remove the first item (the dictionary) form this list. Now iterate
-            through what is left in the list. Each list will conatin one item,
+            through what is left in the list. Each list will contain one item,
             a dictionary. Get this dictionary and print out key => value pair.
         """
         not_allow = ['list-id',]
@@ -384,7 +381,7 @@ class ListTable:
         for list in self.__all_lists:
             id += 1
             self.__list_table_final += 'mi<tg<open-att__<list-in-table'
-            # self.__list_table_final += '<list-id>%s' % (unicode_type(id))
+            # self.__list_table_final += '<list-id>%s' % (str(id))
             the_dict = list[0]
             the_keys = the_dict.keys()
             for the_key in the_keys:
@@ -399,7 +396,7 @@ class ListTable:
             for level in levels:
                 level_num += 1
                 self.__list_table_final += 'mi<tg<empty-att_<level-in-table'
-                self.__list_table_final += '<level>%s' % (unicode_type(level_num))
+                self.__list_table_final += '<level>%s' % (str(level_num))
                 the_dict2 = level[0]
                 the_keys2 = the_dict2.keys()
                 is_bullet = 0
@@ -440,7 +437,7 @@ class ListTable:
         Returns:
             A string and the dictionary of list-table values and attributes.
         Logic:
-            Call on the __parse_lines metod, which splits the text string into
+            Call on the __parse_lines method, which splits the text string into
             lines (which will be tokens) and processes them.
         """
         self.__parse_lines(line)

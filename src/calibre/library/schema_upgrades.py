@@ -9,10 +9,10 @@ __docformat__ = 'restructuredtext en'
 import os
 
 from calibre.utils.date import isoformat, DEFAULT_DATE
-from polyglot.builtins import itervalues, unicode_type
+from polyglot.builtins import itervalues
 
 
-class SchemaUpgrade(object):
+class SchemaUpgrade:
 
     def __init__(self):
         # Upgrade database
@@ -593,10 +593,10 @@ class SchemaUpgrade(object):
                 existing = frozenset(map(int, custom_recipes))
                 if id_ in existing:
                     id_ = max(existing) + 1000
-                id_ = unicode_type(id_)
+                id_ = str(id_)
                 fname = custom_recipe_filename(id_, title)
                 custom_recipes[id_] = (title, fname)
-                if isinstance(script, unicode_type):
+                if isinstance(script, str):
                     script = script.encode('utf-8')
                 with open(os.path.join(bdir, fname), 'wb') as f:
                     f.write(script)

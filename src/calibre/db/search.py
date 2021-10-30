@@ -18,7 +18,7 @@ from calibre.utils.date import parse_date, UNDEFINED_DATE, now, dt_as_local
 from calibre.utils.icu import primary_contains, sort_key
 from calibre.utils.localization import lang_map, canonicalize_lang
 from calibre.utils.search_query_parser import SearchQueryParser, ParseException
-from polyglot.builtins import iteritems, unicode_type, string_or_bytes
+from polyglot.builtins import iteritems, string_or_bytes
 
 CONTAINS_MATCH = 0
 EQUALS_MATCH   = 1
@@ -87,7 +87,7 @@ def _match(query, value, matchkind, use_primary_find_in_search=True, case_sensit
 # }}}
 
 
-class DateSearch(object):  # {{{
+class DateSearch:  # {{{
 
     def __init__(self):
         self.operators = OrderedDict((
@@ -149,7 +149,7 @@ class DateSearch(object):  # {{{
 
         if query == 'false':
             for v, book_ids in field_iter():
-                if isinstance(v, (bytes, unicode_type)):
+                if isinstance(v, (bytes, str)):
                     if isinstance(v, bytes):
                         v = v.decode(preferred_encoding, 'replace')
                     v = parse_date(v)
@@ -159,7 +159,7 @@ class DateSearch(object):  # {{{
 
         if query == 'true':
             for v, book_ids in field_iter():
-                if isinstance(v, (bytes, unicode_type)):
+                if isinstance(v, (bytes, str)):
                     if isinstance(v, bytes):
                         v = v.decode(preferred_encoding, 'replace')
                     v = parse_date(v)
@@ -212,7 +212,7 @@ class DateSearch(object):  # {{{
 # }}}
 
 
-class NumericSearch(object):  # {{{
+class NumericSearch:  # {{{
 
     def __init__(self):
         self.operators = OrderedDict((
@@ -305,7 +305,7 @@ class NumericSearch(object):  # {{{
 # }}}
 
 
-class BooleanSearch(object):  # {{{
+class BooleanSearch:  # {{{
 
     def __init__(self):
         self.local_no        = icu_lower(_('no'))
@@ -347,7 +347,7 @@ class BooleanSearch(object):  # {{{
 # }}}
 
 
-class KeyPairSearch(object):  # {{{
+class KeyPairSearch:  # {{{
 
     def __call__(self, query, field_iter, candidates, use_primary_find):
         matches = set()
@@ -388,7 +388,7 @@ class KeyPairSearch(object):  # {{{
 # }}}
 
 
-class SavedSearchQueries(object):  # {{{
+class SavedSearchQueries:  # {{{
     queries = {}
     opt_name = ''
 
@@ -413,7 +413,7 @@ class SavedSearchQueries(object):  # {{{
         return self._db()
 
     def force_unicode(self, x):
-        if not isinstance(x, unicode_type):
+        if not isinstance(x, str):
             x = x.decode(preferred_encoding, 'replace')
         return x
 
@@ -794,7 +794,7 @@ class Parser(SearchQueryParser):  # {{{
 # }}}
 
 
-class LRUCache(object):  # {{{
+class LRUCache:  # {{{
 
     'A simple Least-Recently-Used cache'
 
@@ -851,7 +851,7 @@ class LRUCache(object):  # {{{
 # }}}
 
 
-class Search(object):
+class Search:
 
     MAX_CACHE_UPDATE = 50
 

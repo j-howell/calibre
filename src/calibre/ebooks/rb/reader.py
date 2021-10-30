@@ -14,13 +14,13 @@ from calibre.ebooks.rb import HEADER
 from calibre.ebooks.rb import RocketBookError
 from calibre.ebooks.metadata.rb import get_metadata
 from calibre.ebooks.metadata.opf2 import OPFCreator
-from polyglot.builtins import range, as_unicode
+from polyglot.builtins import as_unicode
 from polyglot.urllib import unquote
 
 
 class RBToc(list):
 
-    class Item(object):
+    class Item:
 
         def __init__(self, name='', size=0, offset=0, flags=0):
             self.name = name
@@ -29,7 +29,7 @@ class RBToc(list):
             self.flags = flags
 
 
-class Reader(object):
+class Reader:
 
     def __init__(self, stream, log, encoding=None):
         self.stream = stream

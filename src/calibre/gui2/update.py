@@ -1,5 +1,3 @@
-
-
 __license__   = 'GPL v3'
 __copyright__ = '2008, Kovid Goyal <kovid at kovidgoyal.net>'
 
@@ -19,7 +17,6 @@ from calibre.gui2 import config, dynamic, open_url
 from calibre.gui2.dialogs.plugin_updater import get_plugin_updates_available
 from calibre.utils.serialize import msgpack_dumps, msgpack_loads
 from polyglot.binary import as_hex_unicode, from_hex_bytes
-from polyglot.builtins import map, unicode_type
 
 URL = 'https://code.calibre-ebook.com/latest'
 # URL = 'http://localhost:8000/latest'
@@ -53,14 +50,14 @@ def get_newest_version():
         # certificate verification failed, since the version check contains no
         # critical information, ignore and proceed
         # We have to do this as if the calibre CA certificate ever
-        # needs to be revoked, then we wont be able to do version checks
+        # needs to be revoked, then we won't be able to do version checks
         version = get_https_resource_securely(URL, headers=headers, cacerts=None)
     try:
         version = version.decode('utf-8').strip()
     except UnicodeDecodeError:
         version = ''
     ans = NO_CALIBRE_UPDATE
-    m = re.match(unicode_type(r'(\d+)\.(\d+).(\d+)$'), version)
+    m = re.match(r'(\d+)\.(\d+).(\d+)$', version)
     if m is not None:
         ans = tuple(map(int, (m.group(1), m.group(2), m.group(3))))
     return ans
@@ -139,11 +136,11 @@ class UpdateNotification(QDialog):
         ver = calibre_version
         if ver.endswith('.0'):
             ver = ver[:-2]
-        self.label = QLabel(('<p>'+ _(
+        self.label = QLabel('<p>'+ _(
             'New version <b>{ver}</b> of {app} is available for download. '
             'See the <a href="{url}">new features</a>.').format(
                 url=localize_website_link('https://calibre-ebook.com/whats-new'),
-                app=__appname__, ver=ver)))
+                app=__appname__, ver=ver))
         self.label.setOpenExternalLinks(True)
         self.label.setWordWrap(True)
         self.setWindowTitle(_('Update available!'))
@@ -191,7 +188,7 @@ class UpdateNotification(QDialog):
         QDialog.accept(self)
 
 
-class UpdateMixin(object):
+class UpdateMixin:
 
     def __init__(self, *args, **kw):
         pass
@@ -213,7 +210,7 @@ class UpdateMixin(object):
         has_plugin_updates = number_of_plugin_updates > 0
         self.plugin_update_found(number_of_plugin_updates)
         version_url = as_hex_unicode(msgpack_dumps((calibre_version, number_of_plugin_updates)))
-        calibre_version = '.'.join(map(unicode_type, calibre_version))
+        calibre_version = '.'.join(map(str, calibre_version))
 
         if not has_calibre_update and not has_plugin_updates:
             self.status_bar.update_label.setVisible(False)
@@ -264,7 +261,7 @@ class UpdateMixin(object):
             plugin.qaction.setToolTip(_('Install and configure user plugins'))
 
     def update_link_clicked(self, url):
-        url = unicode_type(url)
+        url = str(url)
         if url.startswith('update:'):
             calibre_version, number_of_plugin_updates = msgpack_loads(from_hex_bytes(url[len('update:'):]))
             self.update_found(calibre_version, number_of_plugin_updates, force=True)

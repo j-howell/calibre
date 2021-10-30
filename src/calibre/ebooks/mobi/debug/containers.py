@@ -8,10 +8,9 @@ __copyright__ = '2014, Kovid Goyal <kovid at kovidgoyal.net>'
 from struct import unpack_from
 
 from calibre.ebooks.mobi.debug.headers import EXTHHeader
-from polyglot.builtins import filter, unicode_type
 
 
-class ContainerHeader(object):
+class ContainerHeader:
 
     def __init__(self, data):
         self.ident = data[:4]
@@ -63,4 +62,4 @@ class ContainerHeader(object):
         a('Null bytes after EXTH: %d' % self.null_bytes_after_exth)
         if len(self.bytes_after_exth) != self.null_bytes_after_exth:
             a('Non-null bytes present after EXTH header!!!!')
-        return '\n'.join(ans) + '\n\n' + unicode_type(self.exth) + '\n\n' + ('Title: %s' % self.title)
+        return '\n'.join(ans) + '\n\n' + str(self.exth) + '\n\n' + ('Title: %s' % self.title)

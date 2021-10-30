@@ -7,7 +7,6 @@ __copyright__ = '2015, Kovid Goyal <kovid at kovidgoyal.net>'
 
 import ctypes, ctypes.wintypes as types, struct, datetime, numbers
 
-from polyglot.builtins import unicode_type
 from calibre_extensions import winutil
 
 try:
@@ -53,7 +52,7 @@ def default_errcheck(result, func, args):
 null = object()
 
 
-class a(object):
+class a:
 
     def __init__(self, name, typ, default=null, in_arg=True):
         self.typ = typ
@@ -113,11 +112,11 @@ def expand_environment_strings(src):
 def convert_to_registry_data(value, has_expansions=False):
     if value is None:
         return None, winreg.REG_NONE, 0
-    if isinstance(value, (unicode_type, bytes)):
+    if isinstance(value, (str, bytes)):
         buf = ctypes.create_unicode_buffer(value)
         return buf, (winreg.REG_EXPAND_SZ if has_expansions else winreg.REG_SZ), len(buf) * 2
     if isinstance(value, (list, tuple)):
-        buf = ctypes.create_unicode_buffer('\0'.join(map(unicode_type, value)) + '\0\0')
+        buf = ctypes.create_unicode_buffer('\0'.join(map(str, value)) + '\0\0')
         return buf, winreg.REG_MULTI_SZ, len(buf) * 2
     if isinstance(value, numbers.Integral):
         try:
@@ -211,7 +210,7 @@ def filetime_to_datettime(ft):
 # }}}
 
 
-class Key(object):
+class Key:
 
     def __init__(self, create_at=None, open_at=None, root=HKEY_CURRENT_USER, open_mode=KEY_READ):
         root = getattr(root, 'hkey', root)

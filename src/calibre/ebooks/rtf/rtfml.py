@@ -19,7 +19,7 @@ from lxml import etree
 from calibre.ebooks.metadata import authors_to_string
 from calibre.utils.img import save_cover_data_to
 from calibre.utils.imghdr import identify
-from polyglot.builtins import unicode_type, string_or_bytes
+from polyglot.builtins import string_or_bytes
 
 TAGS = {
     'b': '\\b',
@@ -78,7 +78,7 @@ def txt2rtf(text):
     text = text.replace('}', r'\'7d')
     text = text.replace('\\', r'\'5c')
 
-    if not isinstance(text, unicode_type):
+    if not isinstance(text, str):
         return text
 
     buf = io.StringIO()
@@ -90,12 +90,12 @@ def txt2rtf(text):
             buf.write(x)
         else:
             # python2 and ur'\u' does not work
-            c = '\\u{0:d}?'.format(val)
+            c = '\\u{:d}?'.format(val)
             buf.write(c)
     return buf.getvalue()
 
 
-class RTFMLizer(object):
+class RTFMLizer:
 
     def __init__(self, log):
         self.log = log
@@ -275,7 +275,7 @@ class RTFMLizer(object):
                 text += '{%s\n' % style_tag
                 tag_stack.append(style_tag)
 
-        # Proccess tags that contain text.
+        # Process tags that contain text.
         if hasattr(elem, 'text') and elem.text:
             text += txt2rtf(elem.text)
 

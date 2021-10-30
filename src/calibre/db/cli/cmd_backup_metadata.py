@@ -42,7 +42,7 @@ automatically, every time metadata is changed.
     return parser
 
 
-class BackupProgress(object):
+class BackupProgress:
 
     def __init__(self):
         self.total = 0
@@ -54,7 +54,7 @@ class BackupProgress(object):
         else:
             self.count += 1
             prints(
-                u'%.1f%% %s - %s' % ((self.count * 100) / float(self.total), book_id,
+                '%.1f%% %s - %s' % ((self.count * 100) / float(self.total), book_id,
                                      getattr(mi, 'title', 'Unknown'))
             )
 

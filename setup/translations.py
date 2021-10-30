@@ -13,7 +13,7 @@ from functools import partial
 
 from setup import Command, __appname__, __version__, require_git_master, build_cache_dir, edit_file, dump_json
 from setup.parallel_build import batched_parallel_jobs
-from polyglot.builtins import codepoint_to_chr, iteritems, range
+from polyglot.builtins import codepoint_to_chr, iteritems
 is_ci = os.environ.get('CI', '').lower() == 'true'
 
 
@@ -369,7 +369,7 @@ class Translations(POT):  # {{{
 
     def auto_fix_iso639_files(self, files):
 
-        class Fix(object):
+        class Fix:
 
             def __init__(self):
                 self.seen = set()
@@ -391,7 +391,7 @@ class Translations(POT):  # {{{
                     self.seen.add(msgstr)
                 return match.group()
 
-        class Fix2(object):
+        class Fix2:
 
             def __init__(self, fix1):
                 self.bad = fix1.bad

@@ -1,5 +1,3 @@
-
-
 __license__   = 'GPL v3'
 __copyright__ = '2008, Kovid Goyal <kovid at kovidgoyal.net>'
 
@@ -11,7 +9,6 @@ from calibre.ebooks.metadata.opf2 import OPF
 from calibre import isbytestring
 from calibre.customize.ui import get_file_type_metadata, set_file_type_metadata
 from calibre.ebooks.metadata import MetaInformation, string_to_authors
-from polyglot.builtins import getcwd, unicode_type
 
 # The priorities for loading metadata from different file types
 # Higher values should be used to update metadata from lower values
@@ -209,7 +206,7 @@ def metadata_from_filename(name, pat=None, fallback_pat=None):
 def opf_metadata(opfpath):
     if hasattr(opfpath, 'read'):
         f = opfpath
-        opfpath = getattr(f, 'name', getcwd())
+        opfpath = getattr(f, 'name', os.getcwd())
     else:
         f = open(opfpath, 'rb')
     try:
@@ -230,14 +227,19 @@ def opf_metadata(opfpath):
         pass
 
 
-def forked_read_metadata(path, tdir):
+def forked_read_metadata(original_path, tdir):
     from calibre.ebooks.metadata.opf2 import metadata_to_opf
+    from calibre.ebooks.metadata.worker import run_import_plugins
+    path = run_import_plugins((original_path,), os.getpid(), tdir)[0]
+    if path != original_path:
+        with lopen(os.path.join(tdir, 'file_changed_by_plugins'), 'w') as f:
+            f.write(os.path.abspath(path))
     with lopen(path, 'rb') as f:
         fmt = os.path.splitext(path)[1][1:].lower()
         f.seek(0, 2)
         sz = f.tell()
         with lopen(os.path.join(tdir, 'size.txt'), 'wb') as s:
-            s.write(unicode_type(sz).encode('ascii'))
+            s.write(str(sz).encode('ascii'))
         f.seek(0)
         mi = get_metadata(f, fmt)
     if mi.cover_data and mi.cover_data[1]:

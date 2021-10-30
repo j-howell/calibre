@@ -8,7 +8,6 @@ __docformat__ = 'restructuredtext en'
 from qt.core import QWidget
 
 from calibre.gui2.store.basic_config_widget_ui import Ui_Form
-from polyglot.builtins import unicode_type
 
 
 class BasicStoreConfigWidget(QWidget, Ui_Form):
@@ -28,7 +27,7 @@ class BasicStoreConfigWidget(QWidget, Ui_Form):
         self.tags.setText(config.get('tags', ''))
 
 
-class BasicStoreConfig(object):
+class BasicStoreConfig:
 
     def customization_help(self, gui=False):
         return 'Customize the behavior of this store.'
@@ -38,5 +37,5 @@ class BasicStoreConfig(object):
 
     def save_settings(self, config_widget):
         self.config['open_external'] = config_widget.open_external.isChecked()
-        tags = unicode_type(config_widget.tags.text())
+        tags = str(config_widget.tags.text())
         self.config['tags'] = tags

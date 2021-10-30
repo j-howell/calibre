@@ -1,5 +1,3 @@
-
-
 __license__   = 'GPL v3'
 __copyright__ = '2008, Kovid Goyal kovid@kovidgoyal.net'
 __docformat__ = 'restructuredtext en'
@@ -23,7 +21,7 @@ from calibre.constants import iswindows, DEBUG, plugins_loc
 from calibre.utils.icu import sort_key
 from calibre_extensions import speedup as _c_speedup
 from calibre import prints
-from polyglot.builtins import cmp, native_string_type, unicode_type
+from polyglot.builtins import cmp, native_string_type
 from polyglot import reprlib
 from polyglot.queue import Queue
 
@@ -91,7 +89,7 @@ sqlite.register_converter(native_string_type('bool'), convert_bool)
 sqlite.register_converter(native_string_type('BOOL'), convert_bool)
 
 
-class DynamicFilter(object):
+class DynamicFilter:
 
     def __init__(self, name):
         self.name = name
@@ -104,7 +102,7 @@ class DynamicFilter(object):
         self.ids = frozenset(ids)
 
 
-class Concatenate(object):
+class Concatenate:
     '''String concatenation aggregator for sqlite'''
 
     def __init__(self, sep=','):
@@ -126,7 +124,7 @@ class Concatenate(object):
             raise
 
 
-class SortedConcatenate(object):
+class SortedConcatenate:
     '''String concatenation aggregator for sqlite, sorted by supplied index'''
     sep = ','
 
@@ -156,7 +154,7 @@ class SortedConcatenateAmper(SortedConcatenate):
     sep = '&'
 
 
-class IdentifiersConcat(object):
+class IdentifiersConcat:
     '''String concatenation aggregator for the identifiers map'''
 
     def __init__(self):
@@ -174,7 +172,7 @@ class IdentifiersConcat(object):
             raise
 
 
-class AumSortedConcatenate(object):
+class AumSortedConcatenate:
     '''String concatenation aggregator for the author sort map'''
 
     def __init__(self):
@@ -268,7 +266,7 @@ def do_connect(path, row_factory=None):
     conn.create_function('title_sort', 1, title_sort)
     conn.create_function('author_to_author_sort', 1,
             _author_to_author_sort)
-    conn.create_function('uuid4', 0, lambda : unicode_type(uuid.uuid4()))
+    conn.create_function('uuid4', 0, lambda : str(uuid.uuid4()))
     # Dummy functions for dynamically created filters
     conn.create_function('books_list_filter', 1, lambda x: 1)
     conn.create_collation(native_string_type('icucollate'), icu_collator)
@@ -321,7 +319,7 @@ class DBThread(Thread):
                                 break
                             except OperationalError as err:
                                 # Retry if unable to open db file
-                                e = unicode_type(err)
+                                e = str(err)
                                 if 'unable to open' not in e or i == 2:
                                     if 'unable to open' in e:
                                         prints('Unable to open database for func',
@@ -341,7 +339,7 @@ class DatabaseException(Exception):
     def __init__(self, err, tb):
         tb = '\n\t'.join(('\tRemote'+tb).splitlines())
         try:
-            msg = unicode_type(err) +'\n' + tb
+            msg = str(err) +'\n' + tb
         except:
             msg = repr(err) + '\n' + tb
         Exception.__init__(self, msg)
@@ -362,13 +360,13 @@ def proxy(fn):
             ok, res = self.proxy.results.get()
             if not ok:
                 if isinstance(res[0], IntegrityError):
-                    raise IntegrityError(unicode_type(res[0]))
+                    raise IntegrityError(str(res[0]))
                 raise DatabaseException(*res)
             return res
     return run
 
 
-class ConnectionProxy(object):
+class ConnectionProxy:
 
     def __init__(self, proxy):
         self.proxy = proxy

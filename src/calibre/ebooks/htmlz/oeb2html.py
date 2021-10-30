@@ -20,13 +20,13 @@ from calibre.ebooks.oeb.base import (
     XHTML, XHTML_NS, SVG_NS, barename, namespace, OEB_IMAGES, XLINK, rewrite_links, urlnormalize)
 from calibre.ebooks.oeb.stylizer import Stylizer
 from calibre.utils.logging import default_log
-from polyglot.builtins import unicode_type, string_or_bytes, as_unicode
+from polyglot.builtins import string_or_bytes, as_unicode
 from polyglot.urllib import urldefrag
 
 SELF_CLOSING_TAGS = {'area', 'base', 'basefont', 'br', 'hr', 'input', 'img', 'link', 'meta'}
 
 
-class OEB2HTML(object):
+class OEB2HTML:
     '''
     Base class. All subclasses should implement dump_text to actually transform
     content. Also, callers should use oeb2html to get the transformed html.
@@ -46,7 +46,7 @@ class OEB2HTML(object):
         self.log.info('Converting OEB book to HTML...')
         self.opts = opts
         try:
-            self.book_title = unicode_type(oeb_book.metadata.title[0])
+            self.book_title = str(oeb_book.metadata.title[0])
         except Exception:
             self.book_title = _('Unknown')
         self.links = {}
@@ -58,7 +58,7 @@ class OEB2HTML(object):
 
     def mlize_spine(self, oeb_book):
         output = [
-            u'<html><head><meta http-equiv="Content-Type" content="text/html;charset=utf-8" /><title>%s</title></head><body>' % (
+            '<html><head><meta http-equiv="Content-Type" content="text/html;charset=utf-8" /><title>%s</title></head><body>' % (
                 prepare_string_for_xml(self.book_title))
         ]
         for item in oeb_book.spine:
@@ -139,10 +139,10 @@ class OEB2HTML(object):
 
     def prepare_string_for_html(self, raw):
         raw = prepare_string_for_xml(raw)
-        raw = raw.replace(u'\u00ad', '&shy;')
-        raw = raw.replace(u'\u2014', '&mdash;')
-        raw = raw.replace(u'\u2013', '&ndash;')
-        raw = raw.replace(u'\u00a0', '&nbsp;')
+        raw = raw.replace('\u00ad', '&shy;')
+        raw = raw.replace('\u2014', '&mdash;')
+        raw = raw.replace('\u2013', '&ndash;')
+        raw = raw.replace('\u00a0', '&nbsp;')
         return raw
 
 
@@ -340,9 +340,9 @@ class OEB2HTMLClassCSSizer(OEB2HTML):
             css = '<link href="style.css" rel="stylesheet" type="text/css" />'
         else:
             css =  '<style type="text/css">' + self.get_css(oeb_book) + '</style>'
-        title = u'<title>%s</title>' % prepare_string_for_xml(self.book_title)
-        output = [u'<html><head><meta http-equiv="Content-Type" content="text/html;charset=utf-8" />'] + \
-            [css] + [title, u'</head><body>'] + output + [u'</body></html>']
+        title = '<title>%s</title>' % prepare_string_for_xml(self.book_title)
+        output = ['<html><head><meta http-equiv="Content-Type" content="text/html;charset=utf-8" />'] + \
+            [css] + [title, '</head><body>'] + output + ['</body></html>']
         return ''.join(output)
 
     def dump_text(self, elem, stylizer, page):

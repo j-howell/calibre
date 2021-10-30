@@ -9,7 +9,7 @@ import unittest, sys
 from contextlib import contextmanager
 
 import calibre.utils.icu as icu
-from polyglot.builtins import iteritems, unicode_type, cmp
+from polyglot.builtins import iteritems, cmp
 
 
 @contextmanager
@@ -25,6 +25,7 @@ def make_collation_func(name, locale, numeric=True, maker=icu.make_sort_key_func
 class TestICU(unittest.TestCase):
 
     ae = unittest.TestCase.assertEqual
+    ane= unittest.TestCase.assertNotEqual
 
     def setUp(self):
         icu.change_locale('en')
@@ -65,7 +66,7 @@ class TestICU(unittest.TestCase):
             with make_collation_func('scmp', 'es', maker=icu.make_two_arg_func) as scmp:
                 self.assertNotEqual(0, scmp('pena', 'peña'))
 
-        for k, v in iteritems({u'pèché': u'peche', u'flüße':u'Flusse', u'Štepánek':u'ŠtepaneK'}):
+        for k, v in iteritems({'pèché': 'peche', 'flüße':'Flusse', 'Štepánek':'ŠtepaneK'}):
             self.ae(0, icu.primary_strcmp(k, v))
 
         # Test different types of collation
@@ -99,7 +100,7 @@ class TestICU(unittest.TestCase):
         self.ae((1, 1), icu.find('\U0001f431', 'x\U0001f431x'))
         self.ae((1, 1), icu.find('y', '\U0001f431y'))
         self.ae((0, 4), icu.primary_find('pena', 'peña'))
-        for k, v in iteritems({u'pèché': u'peche', u'flüße':u'Flusse', u'Štepánek':u'ŠtepaneK'}):
+        for k, v in iteritems({'pèché': 'peche', 'flüße':'Flusse', 'Štepánek':'ŠtepaneK'}):
             self.ae((1, len(k)), icu.primary_find(v, ' ' + k), 'Failed to find %s in %s' % (v, k))
         self.assertTrue(icu.startswith(b'abc', b'ab'))
         self.assertTrue(icu.startswith('abc', 'abc'))
@@ -116,14 +117,36 @@ class TestICU(unittest.TestCase):
     def test_collation_order(self):
         'Testing collation ordering'
         for group in [
-            ('Šaa', 'Smith', 'Solženicyn', 'Štepánek'),
-            ('01', '1'),
+            (self.ae,  ('Šaa', 'Smith', 'Solženicyn', 'Štepánek')),
+            (self.ae,  ('11', '011')),
+            (self.ane, ('2', '1')),
+            (self.ae,  ('100 Smith', '0100 Smith')),
         ]:
             last = None
-            for x in group:
-                order, length = icu.numeric_collator().collation_order(x)
+            assert_func = group[0]
+            for x in group[1]:
+                order, _ = icu.numeric_collator().collation_order(x)
                 if last is not None:
-                    self.ae(last, order, 'Order for %s not correct: %s != %s' % (x, last, order))
+                    assert_func(last, order, 'Order for %s not correct: %s != %s' % (x, last, order))
+                last = order
+
+        self.ae(dict(icu.partition_by_first_letter(['A1', '', 'a1', '\U0001f431', '\U0001f431x'])),
+                {' ':[''], 'A':['A1', 'a1'], '\U0001f431':['\U0001f431', '\U0001f431x']})
+
+    def test_collation_order_for_partitioning(self):
+        'Testing collation ordering for partitioning'
+        for group in [
+            (self.ae, ('Smith', 'Šaa', 'Solženicyn', 'Štepánek')),
+            (self.ane, ('11', '011')),
+            (self.ae, ('102 Smith', '100 Smith')),
+            (self.ane, ('100 Smith', '0100 Smith')),
+        ]:
+            last = None
+            assert_func = group[0]
+            for x in group[1]:
+                order, _ = icu.non_numeric_sort_collator().collation_order(x)
+                if last is not None:
+                    assert_func(last, order, 'Order for %s not correct: %s != %s' % (x, last, order))
                 last = order
 
         self.ae(dict(icu.partition_by_first_letter(['A1', '', 'a1', '\U0001f431', '\U0001f431x'])),
@@ -131,7 +154,7 @@ class TestICU(unittest.TestCase):
 
     def test_roundtrip(self):
         ' Test roundtripping '
-        for r in (u'xxx\0\u2219\U0001f431xxx', u'\0', u'', u'simple'):
+        for r in ('xxx\0\u2219\U0001f431xxx', '\0', '', 'simple'):
             self.ae(r, icu._icu.roundtrip(r))
         self.ae(icu._icu.roundtrip('\ud8e81'), '\ufffd1')
         self.ae(icu._icu.roundtrip('\udc01\ud8e8'), '\ufffd\ufffd')
@@ -156,20 +179,20 @@ class TestICU(unittest.TestCase):
         ' Test contractions '
         self.skipTest('Skipping as this depends too much on ICU version')
         c = icu._icu.Collator('cs')
-        self.ae(icu.contractions(c), frozenset({u'Z\u030c', u'z\u030c', u'Ch',
-            u'C\u030c', u'ch', u'cH', u'c\u030c', u's\u030c', u'r\u030c', u'CH',
-            u'S\u030c', u'R\u030c'}))
+        self.ae(icu.contractions(c), frozenset({'Z\u030c', 'z\u030c', 'Ch',
+            'C\u030c', 'ch', 'cH', 'c\u030c', 's\u030c', 'r\u030c', 'CH',
+            'S\u030c', 'R\u030c'}))
 
     def test_break_iterator(self):
         ' Test the break iterator '
         from calibre.spell.break_iterator import split_into_words as split, index_of, split_into_words_and_positions, count_words
         for q in ('one two three', ' one two three', 'one\ntwo  three ', ):
-            self.ae(split(unicode_type(q)), ['one', 'two', 'three'], 'Failed to split: %r' % q)
-        self.ae(split(u'I I\'m'), ['I', "I'm"])
-        self.ae(split(u'out-of-the-box'), ['out-of-the-box'])
-        self.ae(split(u'-one two-'), ['-one', 'two-'])
-        self.ae(split(u'-one a-b-c-d e'), ['-one', 'a-b-c-d', 'e'])
-        self.ae(split(u'-one -a-b-c-d- e'), ['-one', '-a-b-c-d-', 'e'])
+            self.ae(split(str(q)), ['one', 'two', 'three'], 'Failed to split: %r' % q)
+        self.ae(split('I I\'m'), ['I', "I'm"])
+        self.ae(split('out-of-the-box'), ['out-of-the-box'])
+        self.ae(split('-one two-'), ['-one', 'two-'])
+        self.ae(split('-one a-b-c-d e'), ['-one', 'a-b-c-d', 'e'])
+        self.ae(split('-one -a-b-c-d- e'), ['-one', '-a-b-c-d-', 'e'])
         self.ae(split_into_words_and_positions('one \U0001f431 three'), [(0, 3), (6, 5)])
         self.ae(count_words('a b c d e f'), 6)
         for needle, haystack, pos in (

@@ -13,7 +13,7 @@ from calibre.utils.filenames import ascii_filename
 from calibre.utils.fonts.scanner import font_scanner, NoFonts
 from calibre.utils.fonts.utils import panose_to_css_generic_family, is_truetype_font
 from calibre.utils.icu import ord_string
-from polyglot.builtins import codepoint_to_chr, iteritems, range
+from polyglot.builtins import codepoint_to_chr, iteritems
 
 Embed = namedtuple('Embed', 'name key subsetted')
 
@@ -51,7 +51,7 @@ def get_best_font(fonts, style, stretch):
         pass
 
 
-class Family(object):
+class Family:
 
     def __init__(self, elem, embed_relationships, XPath, get):
         self.name = self.family_name = get(elem, 'w:name')
@@ -134,7 +134,7 @@ def map_symbol_text(text, font):
     return ''.join(do_map(m, ord_string(text)))
 
 
-class Fonts(object):
+class Fonts:
 
     def __init__(self, namespace):
         self.namespace = namespace

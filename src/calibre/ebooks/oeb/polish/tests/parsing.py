@@ -14,7 +14,7 @@ from calibre.ebooks.oeb.polish.tests.base import BaseTest
 from calibre.ebooks.oeb.polish.parsing import parse_html5 as parse
 from calibre.ebooks.oeb.base import XPath, XHTML_NS, SVG_NS, XLINK_NS
 from calibre.ebooks.oeb.parse_utils import html5_parse
-from polyglot.builtins import iteritems, range
+from polyglot.builtins import iteritems
 
 
 def nonvoid_cdata_elements(test, parse_function):
@@ -166,6 +166,13 @@ basic_checks = (nonvoid_cdata_elements, namespaces, space_characters,
 
 
 class ParsingTests(BaseTest):
+
+    def test_lxml_tostring(self):
+        ' Test for bug in some versions of lxml that causes incorrect serialization of sub-trees'
+        from html5_parser import parse
+        root = parse('<p>a<p>b<p>c')
+        p = root.xpath('//p')[0]
+        self.assertEqual(etree.tostring(p, encoding=str), '<p>a</p>')
 
     def test_conversion_parser(self):
         ' Test parsing with the HTML5 parser used for conversion '

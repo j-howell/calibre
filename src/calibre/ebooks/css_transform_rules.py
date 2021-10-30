@@ -12,7 +12,7 @@ from css_parser.css import Property, CSSRule
 from calibre import force_unicode
 from calibre.ebooks import parse_css_length
 from calibre.ebooks.oeb.normalize_css import normalizers, safe_parser
-from polyglot.builtins import iteritems, unicode_type
+from polyglot.builtins import iteritems
 
 
 def compile_pat(pat):
@@ -29,7 +29,7 @@ def all_properties(decl):
             yield p
 
 
-class StyleDeclaration(object):
+class StyleDeclaration:
 
     def __init__(self, css_declaration):
         self.css_declaration = css_declaration
@@ -161,10 +161,10 @@ def transform_number(val, op, raw):
     v = op(v, val)
     if int(v) == v:
         v = int(v)
-    return unicode_type(v) + u
+    return str(v) + u
 
 
-class Rule(object):
+class Rule:
 
     def __init__(self, property='color', match_type='*', query='', action='remove', action_data=''):
         self.property_name = property.lower()
@@ -379,7 +379,7 @@ def test(return_tests=False):  # {{{
         r = Rule(**rule)
         decl = StyleDeclaration(safe_parser().parseStyle(style))
         r.process_declaration(decl)
-        return unicode_type(decl)
+        return str(decl)
 
     class TestTransforms(unittest.TestCase):
         longMessage = True

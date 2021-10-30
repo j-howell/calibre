@@ -1,4 +1,3 @@
-
 #########################################################################
 #                                                                       #
 #                                                                       #
@@ -15,7 +14,6 @@ import sys, os
 
 from calibre.ebooks.rtf2xml import copy, border_parse
 from calibre.ptempfile import better_mktemp
-from polyglot.builtins import unicode_type
 
 from . import open_for_read, open_for_write
 
@@ -316,7 +314,7 @@ if another paragraph_def is found, the state changes to collect_tokens.
         Returns:
             nothing
         Logic:
-            Look for the beginning of a paragaraph definition
+            Look for the beginning of a paragraph definition
         """
         # cw<pf<par-def___<nu<true
         if self.__token_info == 'cw<pf<par-def___':
@@ -433,7 +431,7 @@ if another paragraph_def is found, the state changes to collect_tokens.
             Nothing
         Logic:
             The previous state was collect tokens, and I have found the start
-            of a paragraph. I want to outut the defintion tag; output the line
+            of a paragraph. I want to output the definition tag; output the line
             itself (telling me of the beginning of a paragraph);change the
             state to 'in_paragraphs';
         """
@@ -449,7 +447,7 @@ if another paragraph_def is found, the state changes to collect_tokens.
             Nothing
         Logic:
             The state was is after_para_def. and I have found the start of a
-            paragraph. I want to outut the defintion tag; output the line
+            paragraph. I want to output the definition tag; output the line
             itself (telling me of the beginning of a paragraph);change the
             state to 'in_paragraphs'.
             (I now realize that this is absolutely identical to the function above!)
@@ -517,8 +515,8 @@ if another paragraph_def is found, the state changes to collect_tokens.
             out the paragraph definition. If you find another paragraph
             definition, then you write out the old paragraph dictionary and
             print out the string. You change the state to collect tokens.
-            If you find any larger block elemens, such as cell, row,
-            field-block, or section, you write out the paragraph defintion and
+            If you find any larger block elements, such as cell, row,
+            field-block, or section, you write out the paragraph definition and
             then the text string.
             If you find the beginning of a paragraph, then you don't need to
             write out the paragraph definition. Write out the string, and
@@ -537,7 +535,7 @@ if another paragraph_def is found, the state changes to collect_tokens.
             Nothing
         Logic:
             The state is after the end of a paragraph. You have found the
-            start of a paragaph, so you don't need to print out the paragaph
+            start of a paragraph, so you don't need to print out the paragraph
             definition. Print out the string, the line, and change the state
             to in paragraphs.
         """
@@ -553,8 +551,8 @@ if another paragraph_def is found, the state changes to collect_tokens.
         Returns:
             Nothing
         Logic:
-            You have found a new paragraph defintion at the end of a
-            paragraph. Output the end of the old paragraph defintion. Output
+            You have found a new paragraph definition at the end of a
+            paragraph. Output the end of the old paragraph definition. Output
             the text string. Output the line. Change the state to collect
             tokens. (And don't forget to set the text string to ''!)
         """
@@ -571,7 +569,7 @@ if another paragraph_def is found, the state changes to collect_tokens.
         Logic:
             The state is after a paragraph, and you have found a larger block
             than paragraph-definition. You want to write the end tag of the
-            old defintion and reset the text string (handled by other
+            old definition and reset the text string (handled by other
             methods).
         """
         self.__write_para_def_end_func()
@@ -624,7 +622,7 @@ if another paragraph_def is found, the state changes to collect_tokens.
             num = len(self.__style_num_strings)
             new_style = 1
         num = '%04d' % num
-        self.__att_val_dict['style-num'] = 's' + unicode_type(num)
+        self.__att_val_dict['style-num'] = 's' + str(num)
         if new_style:
             self.__write_body_styles()
 

@@ -27,7 +27,7 @@ from calibre.srv.utils import get_library_data, get_use_roman
 from calibre.utils.config import prefs, tweaks
 from calibre.utils.icu import numeric_sort_key, sort_key
 from calibre.utils.localization import (
-    get_lang, lang_map_for_ui, localize_website_link
+    get_lang, lang_map_for_ui, localize_website_link, lang_code_for_user_manual
 )
 from calibre.utils.search_query_parser import ParseException
 from calibre.utils.serialize import json_dumps
@@ -156,7 +156,8 @@ def basic_interface_data(ctx, rd):
         'search_the_net_urls': getattr(ctx, 'search_the_net_urls', None) or [],
         'num_per_page': rd.opts.num_per_page,
         'default_book_list_mode': rd.opts.book_list_mode,
-        'donate_link': localize_website_link('https://calibre-ebook.com/donate')
+        'donate_link': localize_website_link('https://calibre-ebook.com/donate'),
+        'lang_code_for_user_manual': lang_code_for_user_manual(),
     }
     ans['library_map'], ans['default_library_id'] = ctx.library_info(rd)
     return ans
@@ -176,7 +177,7 @@ def update_interface_data(ctx, rd, translations_hash):
 
 def get_field_list(db):
     fieldlist = list(db.pref('book_display_fields', ()))
-    names = frozenset([x[0] for x in fieldlist])
+    names = frozenset(x[0] for x in fieldlist)
     available = frozenset(db.field_metadata.displayable_field_keys())
     for field in available:
         if field not in names:
@@ -209,9 +210,9 @@ def get_library_init_data(ctx, rd, db, num, sorts, orders, vl):
         ans['book_display_fields'] = get_field_list(db)
         mdata = ans['metadata'] = {}
         try:
-            extra_books = set(
+            extra_books = {
                 int(x) for x in rd.query.get('extra_books', '').split(',')
-            )
+            }
         except Exception:
             extra_books = ()
         for coll in (ans['search_result']['book_ids'], extra_books):

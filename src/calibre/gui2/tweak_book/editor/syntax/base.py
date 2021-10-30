@@ -11,7 +11,7 @@ from qt.core import QTextCursor, QTextBlockUserData, QTextLayout, QTimer
 from ..themes import highlight_to_char_format
 from calibre.gui2.tweak_book.widgets import BusyCursor
 from calibre.utils.icu import utf16_length
-from polyglot.builtins import iteritems, unicode_type
+from polyglot.builtins import iteritems
 
 
 def run_loop(user_data, state_map, formats, text):
@@ -38,7 +38,7 @@ def run_loop(user_data, state_map, formats, text):
             break
 
 
-class SimpleState(object):
+class SimpleState:
 
     __slots__ = ('parse',)
 
@@ -63,7 +63,7 @@ class SimpleUserData(QTextBlockUserData):
         self.doc_name = doc_name
 
 
-class SyntaxHighlighter(object):
+class SyntaxHighlighter:
 
     create_formats_func = lambda highlighter: {}
     spell_attributes = ()
@@ -215,7 +215,7 @@ class SyntaxHighlighter(object):
             start_state = self.user_data_factory().state
         ud.clear(state=start_state, doc_name=self.doc_name)  # Ensure no stale user data lingers
         formats = []
-        for i, num, fmt in run_loop(ud, self.state_map, self.formats, unicode_type(block.text())):
+        for i, num, fmt in run_loop(ud, self.state_map, self.formats, str(block.text())):
             if fmt is not None:
                 r = QTextLayout.FormatRange()
                 r.start, r.length, r.format = i, num, fmt

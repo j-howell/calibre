@@ -11,7 +11,7 @@ from calibre.ebooks.docx.index import process_index, polish_index_markup
 from polyglot.builtins import iteritems, native_string_type
 
 
-class Field(object):
+class Field:
 
     def __init__(self, start):
         self.start = start
@@ -54,7 +54,7 @@ null = object()
 
 def parser(name, field_map, default_field_name=None):
 
-    field_map = dict((x.split(':') for x in field_map.split()))
+    field_map = dict(x.split(':') for x in field_map.split())
 
     def parse(raw, log=None):
         ans = {}
@@ -98,7 +98,7 @@ parse_noteref = parser('noteref',
                    'f:footnote h:hyperlink p:position')
 
 
-class Fields(object):
+class Fields:
 
     def __init__(self, namespace):
         self.namespace = namespace

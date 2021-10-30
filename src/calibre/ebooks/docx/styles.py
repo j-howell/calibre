@@ -14,7 +14,7 @@ from calibre.ebooks.docx.tables import TableStyle
 from polyglot.builtins import iteritems, itervalues
 
 
-class PageProperties(object):
+class PageProperties:
 
     '''
     Class representing page level properties (page size/margins) read from
@@ -39,7 +39,7 @@ class PageProperties(object):
                 setval('margin_left', l), setval('margin_right', r)
 
 
-class Style(object):
+class Style:
     '''
     Class representing a <w:style> element. Can contain block, character, etc. styles.
     '''
@@ -104,7 +104,7 @@ class Style(object):
             self.character_style.resolve_based_on(parent.character_style)
 
 
-class Styles(object):
+class Styles:
 
     '''
     Collection of all styles defined in the document. Used to get the final styles applicable to elements in the document markup.
@@ -124,8 +124,7 @@ class Styles(object):
         self.default_paragraph_style = self.default_character_style = None
 
     def __iter__(self):
-        for s in itervalues(self.id_map):
-            yield s
+        yield from itervalues(self.id_map)
 
     def __getitem__(self, key):
         return self.id_map[key]

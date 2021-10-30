@@ -3,11 +3,11 @@
 # License: GPLv3 Copyright: 2017, Kovid Goyal <kovid at kovidgoyal.net>
 
 
+import os
 import sys
 
 from calibre import prints
 from calibre.ebooks.metadata.opf2 import OPFCreator
-from polyglot.builtins import unicode_type, getcwd
 
 readonly = True
 version = 0  # change this if you change signature of implementation()
@@ -46,12 +46,12 @@ def main(opts, args, dbctx):
     book_id = int(args[0])
     mi = dbctx.run('show_metadata', book_id)
     if mi is None:
-        raise SystemExit('Id #%d is not present in database.' % id)
+        raise SystemExit(f'Id #{book_id} is not present in database.')
     if opts.as_opf:
         stdout = getattr(sys.stdout, 'buffer', sys.stdout)
-        mi = OPFCreator(getcwd(), mi)
+        mi = OPFCreator(os.getcwd(), mi)
         mi.render(stdout)
     else:
-        prints(unicode_type(mi))
+        prints(str(mi))
 
     return 0

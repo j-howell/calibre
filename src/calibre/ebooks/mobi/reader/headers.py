@@ -16,7 +16,6 @@ from calibre.ebooks.mobi.langcodes import main_language, sub_language, mobi2iana
 from calibre.utils.cleantext import clean_ascii_chars, clean_xml_chars
 from calibre.utils.localization import canonicalize_lang
 from calibre.utils.config_base import tweaks
-from polyglot.builtins import unicode_type
 
 NULL_INDEX = 0xffffffff
 
@@ -29,7 +28,7 @@ def uniq(vals):
     return list(x for x in vals if x not in seen and not seen_add(x))
 
 
-class EXTHHeader(object):  # {{{
+class EXTHHeader:  # {{{
 
     def __init__(self, raw, codec, title):
         self.doctype = raw[:4]
@@ -188,7 +187,7 @@ class EXTHHeader(object):  # {{{
 # }}}
 
 
-class BookHeader(object):
+class BookHeader:
 
     def __init__(self, raw, ident, user_encoding, log, try_extra_data_fix=False):
         self.log = log
@@ -250,7 +249,7 @@ class BookHeader(object):
 
             self.exth_flag, = struct.unpack('>L', raw[0x80:0x84])
             self.exth = None
-            if not isinstance(self.title, unicode_type):
+            if not isinstance(self.title, str):
                 self.title = self.title.decode(self.codec, 'replace')
             if self.exth_flag & 0x40:
                 try:

@@ -8,7 +8,6 @@ __docformat__ = 'restructuredtext en'
 import sys, struct, zlib, bz2, os
 
 from calibre import guess_type
-from polyglot.builtins import unicode_type
 
 
 class FileStream:
@@ -160,7 +159,7 @@ class SNBFile:
         with open(os.path.join(tdir,fileName), 'rb') as data:
             f.fileBody = data.read()
         f.fileName = fileName.replace(os.sep, '/')
-        if isinstance(f.fileName, unicode_type):
+        if isinstance(f.fileName, str):
             f.fileName = f.fileName.encode("ascii", "ignore")
         self.files.append(f)
 
@@ -171,7 +170,7 @@ class SNBFile:
         with open(os.path.join(tdir,fileName), 'rb') as data:
             f.fileBody = data.read()
         f.fileName = fileName.replace(os.sep, '/')
-        if isinstance(f.fileName, unicode_type):
+        if isinstance(f.fileName, str):
             f.fileName = f.fileName.encode("ascii", "ignore")
         self.files.append(f)
 
@@ -195,7 +194,7 @@ class SNBFile:
     def Output(self, outputFile):
 
         # Sort the files in file buffer,
-        # requried by the SNB file format
+        # required by the SNB file format
         self.files.sort(key=lambda x: x.fileName)
 
         outputFile = open(outputFile, 'wb')

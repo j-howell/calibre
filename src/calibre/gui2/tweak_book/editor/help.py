@@ -15,7 +15,7 @@ from calibre.ebooks.oeb.polish.container import OEB_DOCS
 from calibre.ebooks.oeb.polish.utils import guess_type
 
 
-class URLMap(object):
+class URLMap:
 
     def __init__(self):
         self.cache = {}
@@ -26,7 +26,7 @@ class URLMap(object):
         except KeyError:
             try:
                 self.cache[key] = ans = json.loads(P('editor-help/%s.json' % key, data=True))
-            except EnvironmentError:
+            except OSError:
                 raise KeyError('The mapping %s is not available' % key)
             return ans
 

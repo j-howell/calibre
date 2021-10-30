@@ -21,7 +21,7 @@ from calibre.ebooks.oeb.base import (XHTML, XHTML_NS, CSS_MIME, OEB_STYLES,
 from calibre.ebooks.oeb.stylizer import Stylizer
 from calibre.utils.filenames import ascii_filename, ascii_text
 from calibre.utils.icu import numeric_sort_key
-from polyglot.builtins import iteritems, unicode_type, string_or_bytes, map
+from polyglot.builtins import iteritems, string_or_bytes
 
 COLLAPSE = re.compile(r'[ \t\r\n\v]+')
 STRIPNUM = re.compile(r'[-0-9]+$')
@@ -33,7 +33,7 @@ def asfloat(value, default):
     return float(value)
 
 
-class KeyMapper(object):
+class KeyMapper:
 
     def __init__(self, sbase, dbase, dkey):
         self.sbase = float(sbase)
@@ -83,7 +83,7 @@ class KeyMapper(object):
         return dsize
 
 
-class ScaleMapper(object):
+class ScaleMapper:
 
     def __init__(self, sbase, dbase):
         self.dscale = float(dbase) / float(sbase)
@@ -94,7 +94,7 @@ class ScaleMapper(object):
         return dsize
 
 
-class NullMapper(object):
+class NullMapper:
 
     def __init__(self):
         pass
@@ -112,7 +112,7 @@ def FontMapper(sbase=None, dbase=None, dkey=None):
         return NullMapper()
 
 
-class EmbedFontsCSSRules(object):
+class EmbedFontsCSSRules:
 
     def __init__(self, body_font_family, rules):
         self.body_font_family, self.rules = body_font_family, rules
@@ -131,7 +131,7 @@ class EmbedFontsCSSRules(object):
         return self.href
 
 
-class CSSFlattener(object):
+class CSSFlattener:
 
     def __init__(self, fbase=None, fkey=None, lineh=None, unfloat=False,
                  untable=False, page_break_on_body=False, specializer=None,
@@ -242,7 +242,7 @@ class CSSFlattener(object):
 
         for i, font in enumerate(faces):
             ext = 'otf' if font['is_otf'] else 'ttf'
-            fid, href = self.oeb.manifest.generate(id=u'font',
+            fid, href = self.oeb.manifest.generate(id='font',
                 href='fonts/%s.%s'%(ascii_filename(font['full_name']).replace(' ', '-'), ext))
             item = self.oeb.manifest.add(fid, href,
                     guess_type('dummy.'+ext)[0],
@@ -251,7 +251,7 @@ class CSSFlattener(object):
 
             cfont = {
                     'font-family': '"%s"'%font['font-family'],
-                    'panose-1': ' '.join(map(unicode_type, font['panose'])),
+                    'panose-1': ' '.join(map(str, font['panose'])),
                     'src': 'url(%s)'%item.href,
             }
 
@@ -477,7 +477,7 @@ class CSSFlattener(object):
             minlh = self.context.minimum_line_height / 100.
             slh = style['line-height']
             if not is_drop_cap and isinstance(slh, numbers.Number) and slh < minlh * fsize:
-                cssdict['line-height'] = unicode_type(minlh)
+                cssdict['line-height'] = str(minlh)
         except Exception:
             self.oeb.logger.exception('Failed to set minimum line-height')
 
@@ -529,7 +529,7 @@ class CSSFlattener(object):
 
             if cssdict:
                 items = sorted(iteritems(cssdict))
-                css = ';\n'.join(u'%s: %s' % (key, val) for key, val in items)
+                css = ';\n'.join('%s: %s' % (key, val) for key, val in items)
                 classes = node.get('class', '').strip() or 'calibre'
                 classes_list = classes.split()
                 # lower() because otherwise if the document uses the same class
@@ -539,7 +539,7 @@ class CSSFlattener(object):
                 if css in styles:
                     match = styles[css]
                 else:
-                    match = klass + unicode_type(names[klass] or '')
+                    match = klass + str(names[klass] or '')
                     styles[css] = match
                     names[klass] += 1
                 node.attrib['class'] = match
@@ -559,7 +559,7 @@ class CSSFlattener(object):
                     # then the class attribute for a.x tags will contain both
                     # that class and the class for a.x:hover, which is wrong.
                     klass = 'pcalibre'
-                    match = klass + unicode_type(names[klass] or '')
+                    match = klass + str(names[klass] or '')
                     pstyles[css] = match
                     names[klass] += 1
                 keep_classes.add(match)

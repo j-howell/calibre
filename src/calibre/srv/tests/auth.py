@@ -16,7 +16,7 @@ from calibre.ptempfile import TemporaryDirectory
 from calibre.srv.errors import HTTPForbidden
 from calibre.srv.tests.base import BaseTest, TestServer
 from calibre.srv.routes import endpoint, Router
-from polyglot.builtins import iteritems, itervalues, map
+from polyglot.builtins import iteritems, itervalues
 from polyglot import http_client
 from polyglot.http_cookie import CookieJar
 from polyglot.urllib import (build_opener, HTTPBasicAuthHandler,
@@ -71,7 +71,7 @@ def digest(un, pw, nonce=None, uri=None, method='GET', nc=1, qop='auth', realm=R
     modify(da)
     pw = getattr(da, 'pw', pw)
 
-    class Data(object):
+    class Data:
 
         def __init__(self):
             self.method = method

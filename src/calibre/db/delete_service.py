@@ -23,7 +23,7 @@ class DeleteService(Thread):
     by only moving the files/folders to be deleted out of the library in the
     main thread, they are deleted to recycle bin in a separate worker thread.
 
-    This has the added advantage that doing a restore from the recycle bin wont
+    This has the added advantage that doing a restore from the recycle bin won't
     cause metadata.db and the file system to get out of sync. Also, deleting
     becomes much faster, since in the common case, the move is done by a simple
     os.rename(). The downside is that if the user quits calibre while a long
@@ -88,7 +88,7 @@ class DeleteService(Thread):
                     basename = '%d - %s' % (c, os.path.basename(path))
                 try:
                     shutil.move(path, dest)
-                except EnvironmentError:
+                except OSError:
                     if os.path.isdir(path):
                         # shutil.move may have partially copied the directory,
                         # so the subsequent call to move() will fail as the

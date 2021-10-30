@@ -307,7 +307,7 @@ class Worker(Thread):  # Get details {{{
                 text() = "Buscar productos similares por categoría" or
                 text() = "Ricerca articoli simili per categoria" or
                 text() = "Rechercher des articles similaires par rubrique" or
-                text() = "Procure por itens similares por categoria" or
+                text() = "Procure por items similares por categoria" or
                 text() = "関連商品を探す"
             ]/../descendant::ul/li
         '''
@@ -316,7 +316,7 @@ class Worker(Thread):  # Get details {{{
             r'([0-9.,]+) ?(out of|von|van|su|étoiles sur|つ星のうち|de un máximo de|de|av) '
             r'([\d\.]+)( (stars|Sternen|stelle|estrellas|estrelas|sterren|stjärnor)){0,1}'
         )
-        self.ratings_pat_cn = re.compile('平均([0-9.]+)')
+        self.ratings_pat_cn = re.compile('([0-9.]+) 颗星，最多 5 颗星')
         self.ratings_pat_jp = re.compile(r'\d+つ星のうち([\d\.]+)')
 
         lm = {

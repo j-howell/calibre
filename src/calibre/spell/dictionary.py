@@ -19,7 +19,7 @@ from calibre.spell import parse_lang_code
 from calibre.utils.config import JSONConfig
 from calibre.utils.icu import capitalize
 from calibre.utils.localization import get_lang, get_system_locale
-from polyglot.builtins import filter, iteritems, itervalues, map, unicode_type
+from polyglot.builtins import iteritems, itervalues
 
 Dictionary = namedtuple('Dictionary', 'primary_locale locales dicpath affpath builtin name id')
 LoadedDictionary = namedtuple('Dictionary', 'primary_locale locales obj builtin name id')
@@ -30,7 +30,7 @@ dprefs.defaults['user_dictionaries'] = [{'name':_('Default'), 'is_active':True, 
 not_present = object()
 
 
-class UserDictionary(object):
+class UserDictionary:
 
     __slots__ = ('name', 'is_active', 'words')
 
@@ -178,7 +178,7 @@ def load_dictionary(dictionary):
     return LoadedDictionary(dictionary.primary_locale, dictionary.locales, obj, dictionary.builtin, dictionary.name, dictionary.id)
 
 
-class Dictionaries(object):
+class Dictionaries:
 
     def __init__(self):
         self.remove_hyphenation = re.compile('[\u2010-]+')
@@ -216,7 +216,7 @@ class Dictionaries(object):
                             try:
                                 ans.obj.add(word)
                             except Exception:
-                                # not critical since all it means is that the word wont show up in suggestions
+                                # not critical since all it means is that the word won't show up in suggestions
                                 prints('Failed to add the word %r to the dictionary for %s' % (word, locale), file=sys.stderr)
             self.dictionaries[locale] = ans
         return ans
@@ -397,7 +397,7 @@ class Dictionaries(object):
 
         if d is not None:
             try:
-                ans = d.obj.suggest(unicode_type(word).replace('\u2010', '-'))
+                ans = d.obj.suggest(str(word).replace('\u2010', '-'))
             except ValueError:
                 pass
             else:

@@ -9,7 +9,7 @@ import re, random, unicodedata, numbers
 from collections import namedtuple
 from contextlib import contextmanager
 from math import ceil, sqrt, cos, sin, atan2
-from polyglot.builtins import iteritems, itervalues, map, zip, string_or_bytes
+from polyglot.builtins import iteritems, itervalues, string_or_bytes
 from itertools import chain
 
 from qt.core import (
@@ -126,7 +126,7 @@ def parse_text_formatting(text):
     return text, formats
 
 
-class Block(object):
+class Block:
 
     def __init__(self, text='', width=0, font=None, img=None, max_height=100, align=Qt.AlignmentFlag.AlignCenter):
         self.layouts = []
@@ -340,7 +340,7 @@ def color(color_theme, name):
 # Styles {{{
 
 
-class Style(object):
+class Style:
 
     TITLE_ALIGN = SUBTITLE_ALIGN = FOOTER_ALIGN = Qt.AlignmentFlag.AlignHCenter | Qt.AlignmentFlag.AlignTop
 
@@ -561,10 +561,10 @@ class Blocks(Style):
 
 
 def all_styles():
-    return set(
+    return {
         x.NAME for x in itervalues(globals()) if
         isinstance(x, type) and issubclass(x, Style) and x is not Style
-    )
+    }
 
 
 def load_styles(prefs, respect_disabled=True):

@@ -1737,7 +1737,7 @@ class StoreOzonRUStore(StoreBase):
 
 class StorePragmaticBookshelfStore(StoreBase):
     name = 'Pragmatic Bookshelf'
-    description = 'The Pragmatic Bookshelf\'s collection of programming and tech books avaliable as e-books.'
+    description = 'The Pragmatic Bookshelf\'s collection of programming and tech books available as e-books.'
     actual_plugin = 'calibre.gui2.store.stores.pragmatic_bookshelf_plugin:PragmaticBookshelfStore'
 
     drm_free_only = True
@@ -1814,7 +1814,7 @@ class StoreWeightlessBooksStore(StoreBase):
 class StoreWHSmithUKStore(StoreBase):
     name = 'WH Smith UK'
     author = 'Charles Haley'
-    description = u"Shop for savings on Books, discounted Magazine subscriptions and great prices on Stationery, Toys & Games"
+    description = "Shop for savings on Books, discounted Magazine subscriptions and great prices on Stationery, Toys & Games"
     actual_plugin = 'calibre.gui2.store.stores.whsmith_uk_plugin:WHSmithUKStore'
 
     headquarters = 'UK'

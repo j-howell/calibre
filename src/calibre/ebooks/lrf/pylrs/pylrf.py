@@ -12,7 +12,7 @@ import codecs
 import os
 
 from .pylrfopt import tagListOptimizer
-from polyglot.builtins import iteritems, string_or_bytes, unicode_type
+from polyglot.builtins import iteritems, string_or_bytes
 
 PYLRF_VERSION = "1.0"
 
@@ -85,7 +85,7 @@ def writeWord(f, word):
     if int(word) > 65535:
         raise LrfError('Cannot encode a number greater than 65535 in a word.')
     if int(word) < 0:
-        raise LrfError('Cannot encode a number < 0 in a word: '+unicode_type(word))
+        raise LrfError('Cannot encode a number < 0 in a word: '+str(word))
     f.write(struct.pack("<H", int(word)))
 
 
@@ -357,7 +357,7 @@ TAG_INFO = dict(
     )
 
 
-class ObjectTableEntry(object):
+class ObjectTableEntry:
 
     def __init__(self, objId, offset, size):
         self.objId = objId
@@ -368,7 +368,7 @@ class ObjectTableEntry(object):
         writeDWords(f, self.objId, self.offset, self.size, 0)
 
 
-class LrfTag(object):
+class LrfTag:
 
     def __init__(self, name, *parameters):
         try:
@@ -420,7 +420,7 @@ STREAM_FORCE_COMPRESSED = 0x8100
 STREAM_TOC = 0x0051
 
 
-class LrfStreamBase(object):
+class LrfStreamBase:
 
     def __init__(self, streamFlags, streamData=None):
         self.streamFlags = streamFlags
@@ -496,7 +496,7 @@ class LrfFileStream(LrfStreamBase):
             self.streamData = f.read()
 
 
-class LrfObject(object):
+class LrfObject:
 
     def __init__(self, name, objId):
         if objId <= 0:
@@ -511,7 +511,7 @@ class LrfObject(object):
             raise LrfError("object name %s not recognized" % name)
 
     def __str__(self):
-        return 'LRFObject: ' + self.name + ", " + unicode_type(self.objId)
+        return 'LRFObject: ' + self.name + ", " + str(self.objId)
 
     def appendLrfTag(self, tag):
         self.tags.append(tag)
@@ -618,7 +618,7 @@ class LrfToc(LrfObject):
         return streamData
 
 
-class LrfWriter(object):
+class LrfWriter:
 
     def __init__(self, sourceEncoding):
         self.sourceEncoding = sourceEncoding

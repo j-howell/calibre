@@ -8,7 +8,7 @@ __copyright__ = '2015, Kovid Goyal <kovid at kovidgoyal.net>'
 from collections import defaultdict
 from operator import attrgetter
 
-from polyglot.builtins import iteritems, itervalues, unicode_type
+from polyglot.builtins import iteritems, itervalues
 
 LIST_STYLES = frozenset(
     'disc circle square decimal decimal-leading-zero lower-roman upper-roman'
@@ -50,7 +50,7 @@ def find_list_containers(list_tag, tag_style):
     return ans
 
 
-class NumberingDefinition(object):
+class NumberingDefinition:
 
     def __init__(self, top_most, stylizer, namespace):
         self.namespace = namespace
@@ -83,14 +83,14 @@ class NumberingDefinition(object):
 
     def serialize(self, parent):
         makeelement = self.namespace.makeelement
-        an = makeelement(parent, 'w:abstractNum', w_abstractNumId=unicode_type(self.num_id))
+        an = makeelement(parent, 'w:abstractNum', w_abstractNumId=str(self.num_id))
         makeelement(an, 'w:multiLevelType', w_val='hybridMultilevel')
         makeelement(an, 'w:name', w_val='List %d' % (self.num_id + 1))
         for level in self.levels:
             level.serialize(an, makeelement)
 
 
-class Level(object):
+class Level:
 
     def __init__(self, list_type, container, items, ilvl=0):
         self.ilvl = ilvl
@@ -114,18 +114,18 @@ class Level(object):
         return hash((self.start, self.num_fmt, self.lvl_text))
 
     def serialize(self, parent, makeelement):
-        lvl = makeelement(parent, 'w:lvl', w_ilvl=unicode_type(self.ilvl))
-        makeelement(lvl, 'w:start', w_val=unicode_type(self.start))
+        lvl = makeelement(parent, 'w:lvl', w_ilvl=str(self.ilvl))
+        makeelement(lvl, 'w:start', w_val=str(self.start))
         makeelement(lvl, 'w:numFmt', w_val=self.num_fmt)
         makeelement(lvl, 'w:lvlText', w_val=self.lvl_text)
         makeelement(lvl, 'w:lvlJc', w_val='left')
-        makeelement(makeelement(lvl, 'w:pPr'), 'w:ind', w_hanging='360', w_left=unicode_type(1152 + self.ilvl * 360))
+        makeelement(makeelement(lvl, 'w:pPr'), 'w:ind', w_hanging='360', w_left=str(1152 + self.ilvl * 360))
         if self.num_fmt == 'bullet':
             ff = {'\uf0b7':'Symbol', '\uf0a7':'Wingdings'}.get(self.lvl_text, 'Courier New')
             makeelement(makeelement(lvl, 'w:rPr'), 'w:rFonts', w_ascii=ff, w_hAnsi=ff, w_hint="default")
 
 
-class ListsManager(object):
+class ListsManager:
 
     def __init__(self, docx):
         self.namespace = docx.namespace
@@ -165,5 +165,5 @@ class ListsManager(object):
             defn.serialize(parent)
         makeelement = self.namespace.makeelement
         for defn in self.definitions:
-            n = makeelement(parent, 'w:num', w_numId=unicode_type(defn.num_id + 1))
-            makeelement(n, 'w:abstractNumId', w_val=unicode_type(defn.num_id))
+            n = makeelement(parent, 'w:num', w_numId=str(defn.num_id + 1))
+            makeelement(n, 'w:abstractNumId', w_val=str(defn.num_id))

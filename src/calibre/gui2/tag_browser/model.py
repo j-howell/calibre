@@ -24,11 +24,11 @@ from calibre.library.field_metadata import category_icon_map
 from calibre.utils.config import prefs, tweaks
 from calibre.utils.formatter import EvalFormatter
 from calibre.utils.icu import (
-    collation_order, contains, lower, primary_contains, primary_strcmp, sort_key,
-    strcmp
+    contains, lower, primary_contains, primary_strcmp, sort_key,
+    strcmp, collation_order_for_partitioning
 )
 from calibre.utils.serialize import json_dumps, json_loads
-from polyglot.builtins import iteritems, itervalues, map, range, unicode_type
+from polyglot.builtins import iteritems, itervalues
 
 TAG_SEARCH_STATES = {'clear': 0, 'mark_plus': 1, 'mark_plusplus': 2,
                      'mark_minus': 3, 'mark_minusminus': 4}
@@ -47,7 +47,7 @@ def bf():
     return _bf
 
 
-class TagTreeItem(object):  # {{{
+class TagTreeItem:  # {{{
 
     CATEGORY = 0
     TAG      = 1
@@ -199,7 +199,7 @@ class TagTreeItem(object):  # {{{
             else:
                 name = tag.name
         if role == Qt.ItemDataRole.DisplayRole:
-            return unicode_type(name)
+            return str(name)
         if role == Qt.ItemDataRole.EditRole:
             return (tag.original_name)
         if role == Qt.ItemDataRole.DecorationRole:
@@ -317,6 +317,7 @@ class TagsModel(QAbstractItemModel):  # {{{
     user_categories_edited = pyqtSignal(object, object)
     user_category_added = pyqtSignal()
     show_error_after_event_loop_tick_signal = pyqtSignal(object, object, object)
+    convert_requested = pyqtSignal(object, object)
 
     def __init__(self, parent, prefs=gprefs):
         QAbstractItemModel.__init__(self, parent)
@@ -431,7 +432,7 @@ class TagsModel(QAbstractItemModel):  # {{{
         for i, key in enumerate(self.categories):
             is_gst = False
             if key.startswith('@') and key[1:] in gst:
-                tt = _(u'The grouped search term name is "{0}"').format(key)
+                tt = _('The grouped search term name is "{0}"').format(key)
                 is_gst = True
             elif key == 'news':
                 tt = ''
@@ -442,7 +443,7 @@ class TagsModel(QAbstractItemModel):  # {{{
                     cust_desc = fm['display'].get('description', '')
                     if cust_desc:
                         cust_desc = '\n' + _('Description:') + ' ' + cust_desc
-                tt = _(u'The lookup/search name is "{0}"{1}').format(key, cust_desc)
+                tt = _('The lookup/search name is "{0}"{1}').format(key, cust_desc)
 
             if self.category_custom_icons.get(key, None) is None:
                 self.category_custom_icons[key] = QIcon(I(
@@ -555,7 +556,7 @@ class TagsModel(QAbstractItemModel):  # {{{
                     # Deal with items that don't have sorts, such as formats
                     t = tag.sort if tag.sort else tag.name
                     c = icu_upper(t) if t else ' '
-                    ordnum, ordlen = collation_order(c)
+                    ordnum, ordlen = collation_order_for_partitioning(c)
                     if last_ordnum != ordnum:
                         if fl_collapse and idx > 0:
                             intervals.append(FL_Interval(last_c, last_c, idx-last_idx))
@@ -608,7 +609,7 @@ class TagsModel(QAbstractItemModel):  # {{{
                                 if first_chr == last_chr:
                                     cl_list[cur_idx] = first_chr
                                 else:
-                                    cl_list[cur_idx] = '{0} - {1}'.format(first_chr, last_chr)
+                                    cl_list[cur_idx] = '{} - {}'.format(first_chr, last_chr)
                                 cur_idx += 1
             top_level_component = 'z' + data[key][0].original_name
 
@@ -705,9 +706,9 @@ class TagsModel(QAbstractItemModel):  # {{{
                             child_map = category_child_map
                             top_level_component = comp
                         else:
-                            child_map = dict([((t.tag.name, t.tag.category), t)
+                            child_map = {(t.tag.name, t.tag.category): t
                                         for t in node_parent.children
-                                            if t.type != TagTreeItem.CATEGORY])
+                                            if t.type != TagTreeItem.CATEGORY}
                         if (comp,tag.category) in child_map:
                             node_parent = child_map[(comp,tag.category)]
                             t = node_parent.tag
@@ -840,7 +841,7 @@ class TagsModel(QAbstractItemModel):  # {{{
         return ans
 
     def dropMimeData(self, md, action, row, column, parent):
-        fmts = {unicode_type(x) for x in md.formats()}
+        fmts = {str(x) for x in md.formats()}
         if not fmts.intersection(set(self.mimeTypes())):
             return False
         if "application/calibre+from_library" in fmts:
@@ -967,7 +968,6 @@ class TagsModel(QAbstractItemModel):  # {{{
         self.db.new_api.set_pref('user_categories', user_cats)
         self.refresh_required.emit()
         self.user_category_added.emit()
-
         return True
 
     def do_drop_from_library(self, md, action, row, column, parent):
@@ -977,7 +977,7 @@ class TagsModel(QAbstractItemModel):  # {{{
             if node.type == TagTreeItem.TAG:
                 fm = self.db.metadata_for_field(node.tag.category)
                 if node.tag.category in \
-                    ('tags', 'series', 'authors', 'rating', 'publisher', 'languages') or \
+                    ('tags', 'series', 'authors', 'rating', 'publisher', 'languages', 'formats') or \
                     (fm['is_custom'] and (
                             fm['datatype'] in ['text', 'rating', 'series',
                                                'enumeration'] or (
@@ -993,8 +993,8 @@ class TagsModel(QAbstractItemModel):  # {{{
                     fm_src = self.db.metadata_for_field(md.column_name)
                     if md.column_name in ['authors', 'publisher', 'series'] or \
                             (fm_src['is_custom'] and (
-                             (fm_src['datatype'] in ['series', 'text', 'enumeration'] and
-                              not fm_src['is_multiple']))or
+                             fm_src['datatype'] in ['series', 'text', 'enumeration'] and
+                              not fm_src['is_multiple'])or
                              (fm_src['datatype'] == 'composite' and
                               fm_src['display'].get('make_category', False))):
                         mime = 'application/calibre+from_library'
@@ -1038,9 +1038,15 @@ class TagsModel(QAbstractItemModel):  # {{{
         self.refresh_required.emit()
         self.user_category_added.emit()
 
+    def handle_drop_on_format(self, fmt, book_ids):
+        self.convert_requested.emit(book_ids, fmt)
+
     def handle_drop(self, on_node, ids):
         # print 'Dropped ids:', ids, on_node.tag
         key = on_node.tag.category
+        if key == 'formats':
+            self.handle_drop_on_format(on_node.tag.name, ids)
+            return
         if (key == 'authors' and len(ids) >= 5):
             if not confirm('<p>'+_('Changing the authors for several books can '
                            'take a while. Are you sure?') +
@@ -1224,7 +1230,7 @@ class TagsModel(QAbstractItemModel):  # {{{
         # set up to reposition at the same item. We can do this except if
         # working with the last item and that item is deleted, in which case
         # we position at the parent label
-        val = unicode_type(value or '').strip()
+        val = str(value or '').strip()
         if not val:
             return self.show_error_after_event_loop_tick(_('Item is blank'),
                         _('An item cannot be set to nothing. Delete it instead.'))
@@ -1285,7 +1291,7 @@ class TagsModel(QAbstractItemModel):  # {{{
                 return self.show_error_after_event_loop_tick(
                     _('Duplicate search name'), _('The saved search name %s is already used.')%val)
             self.use_position_based_index_on_next_recount = True
-            self.db.saved_search_rename(unicode_type(item.data(role) or ''), val)
+            self.db.saved_search_rename(str(item.data(role) or ''), val)
             item.tag.name = val
             self.search_item_renamed.emit()  # Does a refresh
         else:
@@ -1308,9 +1314,7 @@ class TagsModel(QAbstractItemModel):  # {{{
             an_item.tag.name = new_name
             an_item.tag.state = TAG_SEARCH_STATES['clear']
             self.use_position_based_index_on_next_recount = True
-            if not restrict_to_books:
-                self.rename_item_in_all_user_categories(original_name,
-                                                        lookup_key, new_name)
+            self.add_renamed_item_to_user_categories(lookup_key, original_name, new_name)
 
         children = item.all_children()
         restrict_to_book_ids=self.get_book_ids_to_use() if item.use_vl else None
@@ -1334,6 +1338,7 @@ class TagsModel(QAbstractItemModel):  # {{{
                     new_name = to_what + child_item.tag.original_name[len(search_name):]
                     do_one_item(key, child_item, child_item.tag.original_name,
                                 new_name, restrict_to_book_ids)
+        self.clean_items_from_user_categories()
         self.refresh_required.emit()
 
     def rename_item_in_all_user_categories(self, item_name, item_category, new_name):
@@ -1379,6 +1384,53 @@ class TagsModel(QAbstractItemModel):  # {{{
         if user_categories is None:
             self.db.new_api.set_pref('user_categories', user_cats)
 
+    def add_renamed_item_to_user_categories(self, lookup_key, original_name, new_name):
+        '''
+        Add new_name to any user category that contains original name if new_name
+        isn't already there. The original name isn't deleted. This is the first
+        step when renaming user categories that might be in virtual libraries
+        because when finished both names may still exist. You should call
+        clean_items_from_user_categories() when done to remove any keys that no
+        longer exist from all user categories. The caller must arrange to
+        redisplay the tree as appropriate.
+        '''
+        user_cats = self.db.new_api.pref('user_categories', {})
+        for cat in user_cats.keys():
+            found_original = False
+            found_new = False
+            for name,key,_ in user_cats[cat]:
+                if key == lookup_key:
+                    if name == original_name:
+                        found_original = True
+                    if name == new_name:
+                        found_new = True
+            if found_original and not found_new:
+                user_cats[cat].append([new_name, lookup_key, 0])
+        self.db.new_api.set_pref('user_categories', user_cats)
+
+    def clean_items_from_user_categories(self):
+        '''
+        Remove any items that no longer exist from user categories. This can
+        happen when renaming items in virtual libraries, where sometimes the
+        old name still exists on some book not in the VL and sometimes it
+        doesn't. The caller must arrange to redisplay the tree as appropriate.
+        '''
+        user_cats = self.db.new_api.pref('user_categories', {})
+        cache = self.db.new_api
+        all_cats = {}
+        for cat in user_cats.keys():
+            new_cat = []
+            for val, key, _ in user_cats[cat]:
+                datatype = cache.field_metadata.get(key, {}).get('datatype', '*****')
+                if datatype != 'composite':
+                    id_ = cache.get_item_id(key, val)
+                    v = cache.books_for_field(key, id_)
+                    if v:
+                        new_cat.append([val, key, 0])
+            if new_cat:
+                all_cats[cat] = new_cat
+        self.db.new_api.set_pref('user_categories', all_cats)
+
     def headerData(self, *args):
         return None
 
@@ -1393,12 +1445,13 @@ class TagsModel(QAbstractItemModel):  # {{{
                     ans |= Qt.ItemFlag.ItemIsDragEnabled
                 fm = self.db.metadata_for_field(category)
                 if category in \
-                    ('tags', 'series', 'authors', 'rating', 'publisher', 'languages') or \
+                    ('tags', 'series', 'authors', 'rating', 'publisher', 'languages', 'formats') or \
                     (fm['is_custom'] and
                         fm['datatype'] in ['text', 'rating', 'series', 'enumeration']):
                     ans |= Qt.ItemFlag.ItemIsDropEnabled
             else:
-                ans |= Qt.ItemFlag.ItemIsDropEnabled
+                if node.type != TagTreeItem.CATEGORY or node.category_key != 'formats':
+                    ans |= Qt.ItemFlag.ItemIsDropEnabled
         return ans
 
     def supportedDropActions(self):

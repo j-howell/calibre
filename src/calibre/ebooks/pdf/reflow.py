@@ -11,11 +11,10 @@ from itertools import count
 
 from lxml import etree
 
-from polyglot.builtins import range, map
 from calibre.utils.xml_parse import safe_xml_fromstring
 
 
-class Font(object):
+class Font:
 
     def __init__(self, spec):
         self.id = spec.get('id')
@@ -24,7 +23,7 @@ class Font(object):
         self.family = spec.get('family')
 
 
-class Element(object):
+class Element:
 
     def __init__(self):
         self.starts_block = None
@@ -78,7 +77,7 @@ class Text(Element):
         text.tail = ''
         self.text_as_string = etree.tostring(text, method='text',
                 encoding='unicode')
-        self.raw = text.text if text.text else u''
+        self.raw = text.text if text.text else ''
         for x in text.iterchildren():
             self.raw += etree.tostring(x, method='xml', encoding='unicode')
         self.average_character_width = self.width/len(self.text_as_string)
@@ -119,7 +118,7 @@ class FontSizeStats(dict):
             self[sz] = chars/total
 
 
-class Interval(object):
+class Interval:
 
     def __init__(self, left, right):
         self.left, self.right = left, right
@@ -145,7 +144,7 @@ class Interval(object):
         return hash('(%f,%f)'%self.left, self.right)
 
 
-class Column(object):
+class Column:
 
     # A column contains an element is the element bulges out to
     # the left or the right by at most HFUZZ*col width.
@@ -180,8 +179,7 @@ class Column(object):
         self.width, self.height = self.right-self.left, self.bottom-self.top
 
     def __iter__(self):
-        for x in self.elements:
-            yield x
+        yield from self.elements
 
     def __len__(self):
         return len(self.elements)
@@ -252,7 +250,7 @@ class ImageBox(Box):
         return ans
 
 
-class Region(object):
+class Region:
 
     def __init__(self, opts, log):
         self.opts, self.log = opts, log
@@ -320,19 +318,18 @@ class Region(object):
                 col = most_suitable_column(elem)
                 if self.opts.verbose > 3:
                     idx = self.columns.index(col)
-                    self.log.debug(u'Absorbing singleton %s into column'%elem.to_html(),
+                    self.log.debug('Absorbing singleton %s into column'%elem.to_html(),
                             idx)
                 col.add(elem)
 
     def collect_stats(self):
         for column in self.columns:
             column.collect_stats()
-        self.average_line_separation = sum([x.average_line_separation for x in
-            self.columns])/float(len(self.columns))
+        self.average_line_separation = sum(x.average_line_separation for x in
+            self.columns)/float(len(self.columns))
 
     def __iter__(self):
-        for x in self.columns:
-            yield x
+        yield from self.columns
 
     def absorb_regions(self, regions, at):
         for region in regions:
@@ -409,7 +406,7 @@ class Region(object):
                 self.boxes[-1].append(elem)
 
 
-class Page(object):
+class Page:
 
     # Fraction of a character width that two strings have to be apart,
     # for them to be considered part of the same text fragment
@@ -563,8 +560,8 @@ class Page(object):
                         absorb_into = prev_region
                         if self.regions[next_region].line_count >= \
                                 self.regions[prev_region].line_count:
-                            avg_column_count = sum([len(r.columns) for r in
-                                regions])/float(len(regions))
+                            avg_column_count = sum(len(r.columns) for r in
+                                regions)/float(len(regions))
                             if self.regions[next_region].line_count > \
                                     self.regions[prev_region].line_count \
                                or abs(avg_column_count -
@@ -619,7 +616,7 @@ class Page(object):
             region.linearize()
 
 
-class PDFDocument(object):
+class PDFDocument:
 
     def __init__(self, xml, opts, log):
         self.opts, self.log = opts, log
@@ -695,6 +692,6 @@ class PDFDocument(object):
         for elem in self.elements:
             html.extend(elem.to_html())
         html += ['</body>', '</html>']
-        raw = (u'\n'.join(html)).replace('</strong><strong>', '')
+        raw = ('\n'.join(html)).replace('</strong><strong>', '')
         with open('index.html', 'wb') as f:
             f.write(raw.encode('utf-8'))

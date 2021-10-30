@@ -23,7 +23,7 @@ conversion_jobs = {}
 cache_lock = Lock()
 
 
-class JobStatus(object):
+class JobStatus:
 
     def __init__(self, job_id, book_id, tdir, library_id, pathtoebook, conversion_data):
         self.job_id = job_id
@@ -70,14 +70,14 @@ def expire_old_jobs():
 def safe_delete_file(path):
     try:
         os.remove(path)
-    except EnvironmentError:
+    except OSError:
         pass
 
 
 def safe_delete_tree(path):
     try:
         shutil.rmtree(path, ignore_errors=True)
-    except EnvironmentError:
+    except OSError:
         pass
 
 

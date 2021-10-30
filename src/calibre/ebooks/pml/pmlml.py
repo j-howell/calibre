@@ -16,7 +16,7 @@ from lxml import etree
 from calibre.ebooks.pdb.ereader import image_name
 from calibre.utils.xml_parse import safe_xml_fromstring
 from calibre.ebooks.pml import unipmlcode
-from polyglot.builtins import unicode_type, string_or_bytes
+from polyglot.builtins import string_or_bytes
 
 TAG_MAP = {
     'b'       : 'B',
@@ -74,7 +74,7 @@ SEPARATE_TAGS = [
 ]
 
 
-class PMLMLizer(object):
+class PMLMLizer:
 
     def __init__(self, log):
         self.log = log
@@ -177,7 +177,7 @@ class PMLMLizer(object):
 
     def prepare_text(self, text):
         # Replace empty paragraphs with \c pml codes used to denote empty lines.
-        text = re.sub(unicode_type(r'(?<=</p>)\s*<p[^>]*>[\xc2\xa0\s]*</p>'), r'\\c\n\\c', text)
+        text = re.sub(r'(?<=</p>)\s*<p[^>]*>[\xc2\xa0\s]*</p>', r'\\c\n\\c', text)
         return text
 
     def clean_text(self, text):
@@ -198,7 +198,7 @@ class PMLMLizer(object):
         text = text.replace('\xa0', ' ')
 
         # Turn all characters that cannot be represented by themself into their
-        # PML code equivelent
+        # PML code equivalent
         text = re.sub('[^\x00-\x7f]', lambda x: unipmlcode(x.group()), text)
 
         # Remove excess spaces at beginning and end of lines
@@ -346,7 +346,7 @@ class PMLMLizer(object):
         except:
             pass
 
-        # Proccess text within this tag.
+        # Process text within this tag.
         if hasattr(elem, 'text') and elem.text:
             text.append(self.prepare_string_for_pml(elem.text))
 
