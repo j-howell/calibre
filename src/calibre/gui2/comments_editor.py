@@ -15,7 +15,7 @@ from qt.core import (
     QDialog, QDialogButtonBox, QFont, QFontInfo, QFontMetrics, QFormLayout, QIcon,
     QKeySequence, QLabel, QLineEdit, QMenu, QPalette, QPlainTextEdit, QPushButton,
     QSize, QSyntaxHighlighter, Qt, QTabWidget, QTextBlockFormat, QTextCharFormat,
-    QTextCursor, QTextEdit, QTextFormat, QTextListFormat, QToolButton, QUrl,
+    QTextCursor, QTextEdit, QTextFormat, QTextListFormat, QTimer, QToolButton, QUrl,
     QVBoxLayout, QWidget, pyqtSignal, pyqtSlot
 )
 
@@ -691,7 +691,7 @@ class EditorWidget(QTextEdit, LineEditECM):  # {{{
         d.bb.rejected.connect(d.reject)
         d.resize(d.sizeHint())
         link, name, is_image = None, None, False
-        if d.exec_() == QDialog.DialogCode.Accepted:
+        if d.exec() == QDialog.DialogCode.Accepted:
             link, name = str(d.url.text()).strip(), str(d.name.text()).strip()
             is_image = d.treat_as_image.isChecked()
         return link, name, is_image
@@ -832,7 +832,7 @@ class EditorWidget(QTextEdit, LineEditECM):  # {{{
         am.addAction(self.action_background)
         am.addAction(self.action_color)
         menu.addAction(_('Smarten punctuation'), parent.smarten_punctuation)
-        menu.exec_(ev.globalPos())
+        menu.exec(ev.globalPos())
 
 # }}}
 
@@ -1139,6 +1139,7 @@ class Editor(QWidget):  # {{{
             ac = getattr(self.editor, 'action_align_'+x)
             self.toolbar.add_action(ac)
         self.toolbar.add_separator()
+        QTimer.singleShot(0, self.toolbar.updateGeometry)
 
         self.code_edit.textChanged.connect(self.code_dirtied)
         self.editor.data_changed.connect(self.wyswyg_dirtied)
@@ -1186,6 +1187,7 @@ class Editor(QWidget):  # {{{
 
     def show_toolbars(self):
         self.toolbar.setVisible(True)
+        QTimer.singleShot(0, self.toolbar.updateGeometry)
 
     def toggle_toolbars(self):
         visible = self.toolbars_visible
@@ -1228,5 +1230,5 @@ if __name__ == '__main__':
     set <u>out</u> to have an <em>affair</em>, <span style="font-style:italic; background-color:red">
     much</span> less a <s>long-term</s>, <b>devoted</b> one.</span><p>hello'''
     w.html = '<div><p id="moo">Testing <em>a</em> link.</p><p>\xa0</p><p>ss</p></div>'
-    app.exec_()
+    app.exec()
     # print w.html

@@ -354,7 +354,8 @@ PDFDoc_get_xmp_metadata(PDFDoc *self, PyObject *args) {
             if ((str = metadata->GetStream()) != NULL) {
                 str->GetFilteredCopy(&buf, &len);
                 if (buf != NULL) {
-                    ans = Py_BuildValue("y#", buf, len);
+                    Py_ssize_t psz = len;
+                    ans = Py_BuildValue("y#", buf, psz);
                     free(buf); buf = NULL;
                     if (ans == NULL) goto error;
                 }
@@ -376,7 +377,7 @@ error:
 static PyObject *
 PDFDoc_set_xmp_metadata(PDFDoc *self, PyObject *args) {
     const char *raw = NULL;
-    long len = 0;
+    Py_ssize_t len = 0;
     PoDoFo::PdfObject *metadata = NULL, *catalog = NULL;
     PoDoFo::PdfStream *str = NULL;
     TVecFilters compressed(1);
