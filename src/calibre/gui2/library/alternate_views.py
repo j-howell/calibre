@@ -441,7 +441,7 @@ class CoverDelegate(QStyledItemDelegate):
             sz = f.pixelSize()
             if sz < 5:
                 sz = f.pointSize() * self.parent().logicalDpiY() / 72.0
-            self.title_height = max(25, sz + 10)
+            self.title_height = int(max(25, sz + 10))
         self.item_size = self.cover_size + QSize(2 * self.MARGIN, (2 * self.MARGIN) + self.title_height)
         if self.emblem_size > 0:
             extra = self.emblem_size + self.MARGIN
@@ -932,7 +932,7 @@ class GridView(QListView):
                     if scaled:
                         if self.ignore_render_requests.is_set():
                             return
-                        p = p.scaled(nwidth, nheight, Qt.AspectRatioMode.IgnoreAspectRatio, Qt.TransformationMode.SmoothTransformation)
+                        p = p.scaled(int(nwidth), int(nheight), Qt.AspectRatioMode.IgnoreAspectRatio, Qt.TransformationMode.SmoothTransformation)
                         p.setDevicePixelRatio(dpr)
                     cdata = p
                 # update cache
