@@ -142,7 +142,8 @@ class ColumnIcon:  # {{{
                     if (os.path.exists(d)):
                         bm = QPixmap(d)
                         scaled, nw, nh = fit_image(bm.width(), bm.height(), bm.width(), dim)
-                        bm = bm.scaled(int(nw), int(nh), aspectRatioMode=Qt.AspectRatioMode.IgnoreAspectRatio, transformMode=Qt.TransformationMode.SmoothTransformation)
+                        bm = bm.scaled(int(nw), int(nh), aspectRatioMode=Qt.AspectRatioMode.IgnoreAspectRatio,
+                                       transformMode=Qt.TransformationMode.SmoothTransformation)
                         bm.setDevicePixelRatio(self.dpr)
                         icon_bitmaps.append(bm)
                         total_width += bm.width()
@@ -1037,7 +1038,9 @@ class BooksModel(QAbstractTableModel):  # {{{
                 if fm['is_custom']:
                     cust_desc = fm['display'].get('description', '')
                     if cust_desc:
-                        cust_desc = '<br><b>{}</b>'.format(_('Description:')) + ' ' + prepare_string_for_xml(cust_desc)
+                        cust_desc = ('<br><b>{}</b>'.format(_('Description:')) +
+                                     '<span style="white-space:pre-wrap"> ' +
+                                     prepare_string_for_xml(cust_desc) + '</span>')
                 return '<b>{}</b>: {}'.format(
                     prepare_string_for_xml(title),
                     _('The lookup/search name is <i>{0}</i>').format(ht) + cust_desc + is_cat
