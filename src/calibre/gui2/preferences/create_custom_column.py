@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-# vim:fileencoding=UTF-8
 
 
 __license__   = 'GPL v3'
@@ -127,7 +126,7 @@ class CreateCustomColumn(QDialog):
         self.shortcuts.setVisible(False)
         col = current_key
         if col not in caller.custcols:
-            self.simple_error('', _('Selected column is not a user-defined column'))
+            self.simple_error('', _('The selected column is not a user-defined column'))
             return
 
         c = caller.custcols[col]
@@ -632,7 +631,7 @@ class CreateCustomColumn(QDialog):
                 display_dict['default_value'] = tv
 
         if col_type in ['text', 'composite', 'enumeration'] and not is_multiple:
-            display_dict['use_decorations'] = self.use_decorations.checkState()
+            display_dict['use_decorations'] = self.use_decorations.checkState() == Qt.CheckState.Checked
 
         if default_val and 'default_value' not in display_dict:
             display_dict['default_value'] = default_val
@@ -666,7 +665,7 @@ class CreateCustomColumn(QDialog):
         QDialog.reject(self)
 
 
-class CreateNewCustomColumn(object):
+class CreateNewCustomColumn:
     """
     Provide an API to create new custom columns.
 
@@ -787,7 +786,8 @@ class CreateNewCustomColumn(object):
         self.custcols = copy.deepcopy(db.field_metadata.custom_field_metadata())
         # Get the largest internal column number so we can be sure that we can
         # detect duplicates.
-        self.created_count = max(x['colnum'] for x in self.custcols.values()) + 1
+        self.created_count = max((x['colnum'] for x in self.custcols.values()),
+                                         default=0) + 1
 
     def create_column(self, lookup_name, column_heading, datatype, is_multiple,
                       display={}, generate_unused_lookup_name=False, freeze_lookup_name=True):
@@ -826,7 +826,7 @@ class CreateNewCustomColumn(object):
                    _("You cannot specify is_multiple for the datatype %s") % datatype)
         if not isinstance(display, dict):
             return(self.Result.INVALID_DISPLAY,
-                   _("The display parameter must a python dict"))
+                   _("The display parameter must be a python dict"))
         self.created_count += 1
         self.custcols[lookup_name] = {
                 'label': lookup_name,
