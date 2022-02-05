@@ -428,37 +428,6 @@ vertical_scrolling_per_row = False
 # Example: locale_for_sorting = 'nb' -- sort using Norwegian rules.
 locale_for_sorting =  ''
 
-#: Number of columns for custom metadata in the edit metadata dialog
-# Set whether to use one or two columns for custom metadata when editing
-# metadata  one book at a time. If True, then the fields are laid out using two
-# columns. If False, one column is used.
-metadata_single_use_2_cols_for_custom_fields = True
-
-#: Order of custom column(s) in edit metadata
-# Controls the order that custom columns are listed in edit metadata single
-# and bulk. The columns listed in the tweak are displayed first and in the
-# order provided. Any columns not listed are displayed after the listed ones,
-# in alphabetical order. Do note that this tweak does not change the size of
-# the edit widgets. Putting comments widgets in this list may result in some
-# odd widget spacing when using two-column mode.
-# Enter a comma-separated list of custom field lookup names, as in
-# metadata_edit_custom_column_order = ['#genre', '#mytags', '#etc']
-metadata_edit_custom_column_order = []
-
-#: Edit metadata custom column label width and elision point
-# Set the width of custom column labels shown in the edit metadata dialogs.
-# If metadata_edit_elide_labels is True then labels wider than the width
-# will be elided, otherwise they will be word wrapped. The maximum width is
-# computed by multiplying the average width of characters in the font by the
-# appropriate number.
-# Set the elision point to 'middle' to put the ellipsis (…) in the middle of
-# the label, 'right' to put it at the right end of the label, and 'left' to
-# put it at the left end.
-metadata_edit_elide_labels = True
-metadata_edit_bulk_cc_label_length = 25
-metadata_edit_single_cc_label_length = 12
-metadata_edit_elision_point = 'right'
-
 #: The number of seconds to wait before sending emails
 # The number of seconds to wait before sending emails when using a
 # public email server like GMX/Hotmail/Gmail. Default is: 5 minutes
@@ -468,7 +437,7 @@ metadata_edit_elision_point = 'right'
 # to be public relays here. Any relay host ending with one of the suffixes
 # in the list below will be considered a public email server.
 public_smtp_relay_delay = 301
-public_smtp_relay_host_suffixes = ['gmail.com', 'live.com', 'gmx.com']
+public_smtp_relay_host_suffixes = ['gmail.com', 'live.com', 'gmx.com', 'outlook.com']
 
 #: The maximum width and height for covers saved in the calibre library
 # All covers in the calibre library will be resized, preserving aspect ratio,
