@@ -338,6 +338,9 @@
         <string>&amp;Layout</string>
        </attribute>
        <layout class="QFormLayout" name="formLayout_2">
+        <property name="fieldGrowthPolicy">
+         <enum>QFormLayout::ExpandingFieldsGrow</enum>
+        </property>
         <item row="0" column="0" colspan="2">
          <widget class="QLabel" name="label_19">
           <property name="text">
@@ -421,7 +424,13 @@
           </property>
           <layout class="QGridLayout" name="gridLayout_4">
            <item row="0" column="0" colspan="5">
-            <widget class="QLabel" name="label_20">
+            <widget class="QLabel" name="cover_size_label">
+             <property name="sizePolicy">
+              <sizepolicy hsizetype="Preferred" vsizetype="MinimumExpanding">
+               <horstretch>0</horstretch>
+               <verstretch>10</verstretch>
+              </sizepolicy>
+             </property>
              <property name="text">
               <string>By default, calibre chooses a cover size based on your computer's screen size. You can change the cover size here:</string>
              </property>
@@ -978,6 +987,47 @@ A value of zero means calculate automatically.</string>
             </property>
            </widget>
           </item>
+          <item row="5" column="0">
+           <layout class="FlowLayout">
+            <item>
+             <widget class="QPushButton" name="em_export_layout_button">
+              <property name="text">
+               <string>Export list</string>
+              </property>
+              <property name="toolTip">
+               <string>&lt;p&gt;Click this button to write the current display
+settings to a file. This could be useful if you have several libraries with similar
+structure and you want to use the same column order for each one.&lt;/p&gt;</string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QPushButton" name="em_import_layout_button">
+              <property name="text">
+               <string>Import list</string>
+              </property>
+              <property name="toolTip">
+               <string>&lt;p&gt;Click this button to set the list to one
+previously exported. This could be useful if you have several libraries with
+similar structure and you want to use the same column order for each one. Columns
+in the imported list that aren't in the current library are ignored. Columns in
+the library that are not in the imported list are put at the end and marked
+as displayable.&lt;/p&gt;</string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QPushButton" name="em_reset_layout_button">
+              <property name="text">
+               <string>Reset list</string>
+              </property>
+              <property name="toolTip">
+               <string>&lt;p&gt;Click this button to reset the list to its default order.&lt;/p&gt;</string>
+              </property>
+             </widget>
+            </item>
+           </layout>
+          </item>
          </layout>
         </widget>
        </item>
@@ -1525,11 +1575,11 @@ when the column in the book list is changed using the cursor arrow keys</string>
          <item row="1" column="0">
           <widget class="QCheckBox" name="opt_qv_retkey_changes_column">
            <property name="toolTip">
-            <string>Pressing 'Enter' in a cell changes both the book and the
+            <string>Pressing Enter in a cell changes both the book and the
 column being examined (the left-hand pane)</string>
            </property>
            <property name="text">
-            <string>&amp;Pressing 'Enter' changes the examined column</string>
+            <string>&amp;Pressing Enter changes the examined column</string>
            </property>
           </widget>
          </item>
@@ -1614,6 +1664,11 @@ column being examined (the left-hand pane)</string>
    <extends>QTabWidget</extends>
    <header>calibre/gui2/widgets2.h</header>
    <container>1</container>
+  </customwidget>
+  <customwidget>
+   <class>FlowLayout</class>
+   <extends>QLayout</extends>
+   <header>calibre/gui2/widgets2.h</header>
   </customwidget>
  </customwidgets>
  <resources>
