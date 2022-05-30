@@ -38,9 +38,11 @@ def render_svg(widget, path):
 class Label(QLabel):
 
     toggle_fit = pyqtSignal()
+    zoom_requested = pyqtSignal(bool)
 
     def __init__(self, scrollarea):
         super().__init__(scrollarea)
+        scrollarea.zoom_requested.connect(self.zoom_requested)
         self.setBackgroundRole(QPalette.ColorRole.Text if QApplication.instance().is_dark_theme else QPalette.ColorRole.Base)
         self.setSizePolicy(QSizePolicy.Policy.Ignored, QSizePolicy.Policy.Ignored)
         self.setScaledContents(True)
@@ -86,10 +88,25 @@ class Label(QLabel):
 class ScrollArea(QScrollArea):
 
     toggle_fit = pyqtSignal()
+    zoom_requested = pyqtSignal(bool)
+    current_wheel_angle_delta = 0
 
     def mouseDoubleClickEvent(self, ev):
         if ev.button() == Qt.MouseButton.LeftButton:
             self.toggle_fit.emit()
+
+    def wheelEvent(self, ev):
+        if ev.modifiers() == Qt.KeyboardModifier.ControlModifier:
+            ad = ev.angleDelta().y()
+            if ad * self.current_wheel_angle_delta < 0:
+                self.current_wheel_angle_delta = 0
+            self.current_wheel_angle_delta += ad
+            if abs(self.current_wheel_angle_delta) >= 120:
+                self.zoom_requested.emit(self.current_wheel_angle_delta < 0)
+                self.current_wheel_angle_delta = 0
+            ev.accept()
+        else:
+            super().wheelEvent(ev)
 
 
 class ImageView(QDialog):
@@ -111,6 +128,7 @@ class ImageView(QDialog):
         sa.setAlignment(Qt.AlignmentFlag.AlignHCenter | Qt.AlignmentFlag.AlignVCenter)
         sa.setBackgroundRole(QPalette.ColorRole.Dark)
         self.label = l = Label(sa)
+        l.zoom_requested.connect(self.zoom_requested)
         sa.toggle_fit.connect(self.toggle_fit)
         sa.setWidget(l)
 
@@ -177,6 +195,10 @@ class ImageView(QDialog):
         scaled_height = self.label.size().height()
         actual_height = self.current_img.size().height()
         return scaled_height / actual_height
+
+    def zoom_requested(self, zoom_out):
+        if (zoom_out and self.zo_button.isEnabled()) or (not zoom_out and self.zi_button.isEnabled()):
+            (self.zoom_out if zoom_out else self.zoom_in)()
 
     def zoom_in(self):
         if self.fit_image.isChecked():
@@ -284,12 +306,6 @@ class ImageView(QDialog):
                 self.showMaximized()
             else:
                 self.showNormal()
-
-    def wheelEvent(self, event):
-        d = event.angleDelta().y()
-        if abs(d) > 0 and not self.scrollarea.verticalScrollBar().isVisible():
-            event.accept()
-            (self.zoom_out if d < 0 else self.zoom_in)()
 
 
 class ImagePopup:

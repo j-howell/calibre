@@ -627,7 +627,7 @@ class TagBrowserWidget(QFrame):  # {{{
 
     def __init__(self, parent):
         QFrame.__init__(self, parent)
-        self.setFrameStyle(QFrame.Shape.NoFrame if gprefs['tag_browser_old_look'] else QFrame.Shape.StyledPanel)
+        self.setFrameStyle(QFrame.Shape.NoFrame)
         self._parent = parent
         self._layout = QVBoxLayout(self)
         self._layout.setContentsMargins(0,0,0,0)
@@ -720,7 +720,7 @@ class TagBrowserWidget(QFrame):  # {{{
         ma.setStatusTip(ma.toolTip())
 
         mt = l.m.addAction(_('Manage authors, tags, etc.'))
-        mt.setToolTip(_('All of these category_managers are available by right-clicking '
+        mt.setToolTip(_('All of these category managers are available by right-clicking '
                        'on items in the Tag browser above'))
         mt.m = l.manage_menu = QMenu(l.m)
         mt.setMenu(mt.m)

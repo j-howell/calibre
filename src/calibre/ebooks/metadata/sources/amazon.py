@@ -4,6 +4,7 @@
 from __future__ import absolute_import, division, print_function, unicode_literals
 
 import re
+import string
 import socket
 import time
 from functools import partial
@@ -511,16 +512,19 @@ class Worker(Thread):  # Get details {{{
     def totext(self, elem, only_printable=False):
         res = self.tostring(elem, encoding='unicode', method='text')
         if only_printable:
-            filtered_characters = list(s for s in res if s.isprintable())
+            try:
+                filtered_characters = list(s for s in res if s.isprintable())
+            except AttributeError:
+                filtered_characters = list(s for s in res if s in string.printable)
             res = ''.join(filtered_characters).strip()
         return res
 
     def parse_title(self, root):
 
         def sanitize_title(title):
-            ans = re.sub(r'[(\[].*[)\]]', '', title).strip()
-            if not ans:
-                ans = title.rpartition('[')[0].strip()
+            ans = title.strip()
+            if not ans.startswith('['):
+                ans = re.sub(r'[(\[].*[)\]]', '', title).strip()
             return ans
 
         h1 = root.xpath('//h1[@id="title"]')
@@ -971,7 +975,7 @@ class Worker(Thread):  # Get details {{{
 class Amazon(Source):
 
     name = 'Amazon.com'
-    version = (1, 2, 24)
+    version = (1, 2, 27)
     minimum_calibre_version = (2, 82, 0)
     description = _('Downloads metadata and covers from Amazon')
 
@@ -993,6 +997,7 @@ class Amazon(Source):
         'jp': _('Japan'),
         'es': _('Spain'),
         'br': _('Brazil'),
+        'in': _('India'),
         'nl': _('Netherlands'),
         'cn': _('China'),
         'ca': _('Canada'),
@@ -1031,6 +1036,22 @@ class Amazon(Source):
     def __init__(self, *args, **kwargs):
         Source.__init__(self, *args, **kwargs)
         self.set_amazon_id_touched_fields()
+
+    def id_from_url(self, url):
+        from polyglot.urllib import urlparse
+        purl = urlparse(url)
+        if purl.netloc and purl.path and '/dp/' in purl.path:
+            host_parts = tuple(x.lower() for x in purl.netloc.split('.'))
+            if 'amazon' in host_parts:
+                domain = host_parts[-1]
+            parts = purl.path.split('/')
+            idx = parts.index('dp')
+            try:
+                val = parts[idx+1]
+            except IndexError:
+                return
+            aid = 'amazon' if domain == 'com' else ('amazon_' + domain)
+            return aid, val
 
     def test_fields(self, mi):
         '''
@@ -1109,7 +1130,7 @@ class Amazon(Source):
 
     def _get_book_url(self, identifiers):  # {{{
         domain, asin = self.get_domain_and_asin(
-            identifiers, extra_domains=('in', 'au', 'ca'))
+            identifiers, extra_domains=('au', 'ca'))
         if domain and asin:
             url = None
             r = self.referrer_for_domain(domain)
@@ -1809,6 +1830,13 @@ def manual_tests(domain, **kw):  # {{{
             {'identifiers': {'amazon_ca': '162380874X'}},
             [title_test('Parting Shot', exact=True), authors_test(['Mary Calmes'])
              ]
+        ),
+    ]  # }}}
+
+    all_tests['in'] = [  # {{{
+        (   # Paperback with series
+            {'identifiers': {'amazon_in': '1423146786'}},
+            [title_test('The Heroes of Olympus, Book Five The Blood of Olympus', exact=True)]
         ),
     ]  # }}}
 

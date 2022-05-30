@@ -11,7 +11,7 @@ from qt.core import (
 )
 
 from calibre import strftime
-from calibre.library.caches import CONTAINS_MATCH, EQUALS_MATCH
+from calibre.library.caches import CONTAINS_MATCH, EQUALS_MATCH, REGEXP_MATCH
 from calibre.gui2 import gprefs
 from calibre.gui2.complete2 import EditWithComplete
 from calibre.utils.icu import sort_key
@@ -66,6 +66,7 @@ def create_match_kind(self):
         _("Contains: the word or phrase matches anywhere in the metadata field"),
         _("Equals: the word or phrase must match the entire metadata field"),
         _("Regular expression: the expression must match anywhere in the metadata field"),
+        _("Character variant: 'contains' with accents ignored and punctuation significant")
     ])
     l = QHBoxLayout()
     l.addWidget(la), l.addWidget(m)
@@ -267,9 +268,9 @@ def create_template_tab(self):
     le.setObjectName('template_value_box')
     le.setPlaceholderText(_('The value to search for'))
     le.setToolTip('<p>' +
-                  _("You can use the search test specifications described "
+                  _("You can use the search specifications described "
                     "in the calibre documentation. For example, with Number "
-                    "comparisons you can the relational operators like '>=' etc. "
+                    "comparisons you can use the relational operators like '>=' etc. "
                     "With Text comparisons you can use contains (T), exact (=T), "
                     "or regular expression matches (~T). With Date you can use "
                     "today, yesterday, etc. Set/not set takes 'true' for set "
@@ -427,8 +428,10 @@ class SearchDialog(QDialog):
             self.mc = ''
         elif mk == EQUALS_MATCH:
             self.mc = '='
-        else:
+        elif mk == REGEXP_MATCH:
             self.mc = '~'
+        else:
+            self.mc = '^'
         all, any, phrase, none = map(lambda x: str(x.text()),
                 (self.all, self.any, self.phrase, self.none))
         all, any, none = map(self.tokens, (all, any, none))
@@ -466,8 +469,10 @@ class SearchDialog(QDialog):
             self.mc = ''
         elif mk == EQUALS_MATCH:
             self.mc = '='
-        else:
+        elif mk == REGEXP_MATCH:
             self.mc = '~'
+        else:
+            self.mc = '^'
 
         ans = []
         self.box_last_values = {}
