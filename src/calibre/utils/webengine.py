@@ -4,10 +4,40 @@
 
 
 import json
+import os
 from qt.core import QBuffer, QIODevice, QObject, pyqtSignal, sip
-from qt.webengine import QWebEngineScript, QWebEngineSettings
+from qt.webengine import (
+    QWebEngineProfile, QWebEngineScript, QWebEngineSettings, QWebEngineUrlScheme
+)
 
-from calibre.utils.rapydscript import special_title
+from calibre.constants import (
+    FAKE_PROTOCOL, SPECIAL_TITLE_FOR_WEBENGINE_COMMS, cache_dir
+)
+
+
+def setup_fake_protocol():
+    p = FAKE_PROTOCOL.encode('ascii')
+    if not QWebEngineUrlScheme.schemeByName(p).name():
+        scheme = QWebEngineUrlScheme(p)
+        scheme.setSyntax(QWebEngineUrlScheme.Syntax.Host)
+        scheme.setFlags(QWebEngineUrlScheme.Flag.SecureScheme)
+        QWebEngineUrlScheme.registerScheme(scheme)
+
+
+def setup_profile(profile):
+    # Qt uses persistent storage path to store cached GPU data even for OTR profiles
+    base = os.path.abspath(os.path.join(cache_dir(), 'qwe', profile.storageName() or 'dp'))
+    cp = os.path.join(base, 'c')
+    if profile.cachePath() != cp:
+        profile.setCachePath(cp)
+    sp = os.path.join(base, 'sp')
+    if profile.persistentStoragePath() != sp:
+        profile.setPersistentStoragePath(sp)
+    return profile
+
+
+def setup_default_profile():
+    return setup_profile(QWebEngineProfile.defaultProfile())
 
 
 def send_reply(rq, mime_type, data):
@@ -112,7 +142,7 @@ class Bridge(QObject):
         return self._signals_registered
 
     def _title_changed(self, title):
-        if title.startswith(special_title):
+        if title.startswith(SPECIAL_TITLE_FOR_WEBENGINE_COMMS):
             self._poll_for_messages()
 
     def _register_signals(self):

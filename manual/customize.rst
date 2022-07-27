@@ -29,6 +29,9 @@ calibre has a highly modular design. Various parts of it can be customized.  Her
 
    plugins
 
+
+.. _customize_env_vars:
+
 Environment variables
 -----------------------
 
@@ -49,6 +52,7 @@ Environment variables
       the system theme -- beware of crashes and hangs.
     * ``CALIBRE_SHOW_DEPRECATION_WARNINGS`` - causes calibre to print deprecation warnings to stdout. Useful for calibre developers.
     * ``CALIBRE_NO_DEFAULT_PROGRAMS`` - prevent calibre from automatically registering the filetypes it is capable of handling with Windows.
+    * ``QT_QPA_PLATFORM`` - On Linux set this to ``wayland`` to force calibre to use Wayland and ``xcb`` to force use of X11.
     * ``SYSFS_PATH`` - Use if sysfs is mounted somewhere other than /sys
     * ``http_proxy``, ``https_proxy`` - used on Linux to specify an HTTP(S) proxy
 
@@ -75,7 +79,7 @@ Overriding icons, templates, et cetera
 
 .. note::
    calibre has direct support for icon themes, there are several icon themes
-   available for calibre, that you can use by going to :guilabel:`Preferences->Interface->Look & Feel->Change Icon theme`.
+   available for calibre, that you can use by going to :guilabel:`Preferences->Interface->Look & Feel->Change icon theme`.
    It is preferable to use icon themes over overriding individual icons.
 
 
@@ -113,13 +117,21 @@ If you have created a beautiful set of icons and wish to share them with other
 calibre users via calibre's builtin icon theme support, you can easily package
 up your icons into a theme. To do so, go to
 :guilabel:`Preferences->Miscellaneous->Create icon theme`, select the folder
-where you have put your icons (usually the :file:`resources/images` folder in
-the calibre config folder, as described above). Then fill up the theme
-metadata and click OK.  This will result in a ZIP file containing the theme
+where you have put your icons. Then fill up the theme
+metadata and click OK. This will result in a ZIP file containing the theme
 icons. You can upload that to the calibre forum at `Mobileread
 <https://www.mobileread.com/forums/forumdisplay.php?f=166>`__ and then I will
 make your theme available via calibre's builtin icon theme system.
+By default, the icon theme you just created will also be installed as the
+current theme in calibre. If you are testing your theme, remember to remove
+the images from the :file:`resources/images` folder so that the icons from the
+theme are used.
 
+As of calibre 6, you can have custom icons for light and dark mode. Simply
+create two versions of the icon and name the files with the suffix
+``-for-dark-theme`` and ``-for-light-theme``. For example,
+``modified-for-dark-theme.png`` and ``modified-for-light-theme.png``. Then
+calibre will automatically use the appropriate icon based on the current theme.
 
 Customizing calibre with plugins
 --------------------------------
