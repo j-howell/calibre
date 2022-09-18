@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>1083</width>
+    <width>1096</width>
     <height>791</height>
    </rect>
   </property>
@@ -397,6 +397,12 @@
           <layout class="QGridLayout" name="gridLayout_4">
            <item row="0" column="0" colspan="5">
             <widget class="QLabel" name="cover_size_label">
+             <property name="sizePolicy">
+              <sizepolicy hsizetype="Preferred" vsizetype="Minimum">
+               <horstretch>0</horstretch>
+               <verstretch>0</verstretch>
+              </sizepolicy>
+             </property>
              <property name="text">
               <string>By default, calibre chooses a cover size based on your computer's screen size. You can change the cover size here:</string>
              </property>
@@ -727,14 +733,14 @@ A value of zero means calculate automatically.</string>
          </layout>
         </widget>
        </item>
-       <item row="5" column="0" colspan="2">
+       <item row="5" column="0" colspan="3">
         <widget class="QPushButton" name="id_links_button">
          <property name="text">
           <string>Create rules to convert &amp;identifiers into links</string>
          </property>
         </widget>
        </item>
-       <item row="1" column="0" colspan="2">
+       <item row="3" column="0" colspan="3">
         <widget class="QWidget" name="default_author_link_container" native="true">
          <property name="sizePolicy">
           <sizepolicy hsizetype="Preferred" vsizetype="Maximum">
@@ -742,6 +748,25 @@ A value of zero means calculate automatically.</string>
            <verstretch>0</verstretch>
           </sizepolicy>
          </property>
+        </widget>
+       </item>
+       <item row="6" column="2">
+        <widget class="QGroupBox" name="groupBox3">
+         <property name="title">
+          <string>Categories on separate lines</string>
+         </property>
+         <property name="toolTip">
+          <string>&lt;p&gt;Check the box if you want the category's values displayed on separate lines instead of separated by commas&lt;/p&gt;</string>
+         </property>
+         <layout class="QVBoxLayout" name="vblayout_3">
+          <item>
+           <widget class="QListView" name="bd_vertical_cats">
+            <property name="alternatingRowColors">
+             <bool>true</bool>
+            </property>
+           </widget>
+          </item>
+         </layout>
         </widget>
        </item>
        <item row="6" column="1">
@@ -805,7 +830,7 @@ A value of zero means calculate automatically.</string>
          </layout>
         </widget>
        </item>
-       <item row="0" column="0" colspan="2">
+       <item row="0" column="0" colspan="3">
         <layout class="QHBoxLayout">
          <item>
           <widget class="QCheckBox" name="opt_bd_show_cover">
@@ -849,7 +874,7 @@ A value of zero means calculate automatically.</string>
          </item>
         </layout>
        </item>
-       <item row="4" column="0" colspan="2">
+       <item row="1" column="0" colspan="2">
         <layout class="QHBoxLayout" name="horizontalLayout_2">
          <item>
           <widget class="QLabel" name="label_25">
@@ -1149,15 +1174,15 @@ using the Tab key. The F2 (Edit) key will still open the template editor.&lt;/p&
        </attribute>
        <layout class="QGridLayout" name="verticalLayout_42">
         <item row="0" column="0">
-         <widget class="QLabel">
+         <widget class="QLabel" name="label">
+          <property name="toolTip">
+           <string>User categories and Saved searches cannot be moved</string>
+          </property>
           <property name="text">
            <string>Select the categories to display in the Tag browser, and their &amp;order</string>
           </property>
           <property name="buddy">
            <cstring>tb_display_order</cstring>
-          </property>
-          <property name="toolTip">
-           <string>User categories and Saved searches cannot be moved</string>
           </property>
          </widget>
         </item>
@@ -1481,13 +1506,7 @@ up into subcategories. If the partition method is set to disable, this value is 
            </layout>
           </item>
           <item row="1" column="0">
-           <widget class="QLabel">
-            <property name="text">
-             <string>Select categories to &amp;partition:</string>
-            </property>
-            <property name="buddy">
-             <cstring>tb_cats_to_partition</cstring>
-            </property>
+           <widget class="QLabel" name="label">
             <property name="toolTip">
              <string>&lt;p&gt;Check the box for categories that are to
 be partitioned using the criteria above. Uncheck the box if you don't want to
@@ -1495,6 +1514,12 @@ partition a category even if the number of items is larger than
 the value shown above. This option can be used to
 avoid collapsing hierarchical categories that have only
 a few top-level elements.&lt;/p&gt;</string>
+            </property>
+            <property name="text">
+             <string>Select categories to &amp;partition:</string>
+            </property>
+            <property name="buddy">
+             <cstring>tb_cats_to_partition</cstring>
             </property>
            </widget>
           </item>
@@ -1572,13 +1597,7 @@ structure and you want to use the same for each one.&lt;/p&gt;</string>
        </attribute>
        <layout class="QGridLayout">
         <item row="0" column="0">
-         <widget class="QLabel">
-          <property name="text">
-           <string>Select categories with &amp;hierarchical items:</string>
-          </property>
-          <property name="buddy">
-           <cstring>tb_hierarchical_cats</cstring>
-          </property>
+         <widget class="QLabel" name="label">
           <property name="toolTip">
            <string>&lt;p&gt;Check the box for an item if it is to be displayed as a
 hierarchical tree in the Tag browser. For example, if you check
@@ -1588,6 +1607,12 @@ both under 'Mystery'. If 'tags' is not checked
 then the tags will be displayed each on their own line.&lt;/p&gt;
 &lt;p&gt;The categories 'authors', 'publisher', 'news', 'formats', and 'rating'
 cannot be hierarchical.&lt;/p&gt;</string>
+          </property>
+          <property name="text">
+           <string>Select categories with &amp;hierarchical items:</string>
+          </property>
+          <property name="buddy">
+           <cstring>tb_hierarchical_cats</cstring>
           </property>
          </widget>
         </item>
@@ -1675,15 +1700,15 @@ structure and you want to use the same for each one.&lt;/p&gt;</string>
          </spacer>
         </item>
         <item row="11" column="0">
-         <widget class="QLabel">
-          <property name="text">
-           <string>Set the &amp;order of searches when clicking on items</string>
-          </property>
+         <widget class="QLabel" name="label">
           <property name="toolTip">
            <string>&lt;p&gt;Set the order of the searches when clicking on an item in
 the Tag browser. The 'or its children' options are ignored when clicking on
 top-level categories, items that aren't in a hierarchical category, and items
 that don't have children.&lt;/p&gt;</string>
+          </property>
+          <property name="text">
+           <string>Set the &amp;order of searches when clicking on items</string>
           </property>
           <property name="buddy">
            <cstring>tb_search_order</cstring>
@@ -2043,7 +2068,7 @@ column being examined (the left-hand panel)&lt;/p&gt;</string>
    </item>
   </layout>
  </widget>
- <customwidgets>ListWidgetWithMoveByKeyPress
+ <customwidgets>
   <customwidget>
    <class>ListViewWithMoveByKeyPress</class>
    <extends>QListView</extends>
@@ -2053,11 +2078,6 @@ column being examined (the left-hand panel)&lt;/p&gt;</string>
    <class>ListWidgetWithMoveByKeyPress</class>
    <extends>QListWidget</extends>
    <header>calibre/gui2/preferences.h</header>
-  </customwidget>
-  <customwidget>
-   <class>EditWithComplete</class>
-   <extends>QComboBox</extends>
-   <header>calibre/gui2/complete2.h</header>
   </customwidget>
   <customwidget>
    <class>ScrollingTabWidget</class>
