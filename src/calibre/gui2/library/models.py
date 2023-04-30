@@ -205,8 +205,10 @@ class BooksModel(QAbstractTableModel):  # {{{
                         'series'    : ngettext("Series", 'Series', 1),
                         'last_modified' : _('Modified'),
                         'languages' : _('Languages'),
+                        'formats'   : _('Formats'),
+                        'id'        : _('Id'),
+                        'path'      : _('Path'),
         }
-
         self.db = None
 
         self.formatter = SafeFormat()
@@ -583,6 +585,11 @@ class BooksModel(QAbstractTableModel):  # {{{
         if not self.db:
             return
         self.db.multisort(self.sort_history[:tweaks['maximum_resort_levels']])
+        if self.sort_history:
+            # There are ways to get here that don't set sorted_on, e.g., the
+            # sort_by action. I don't think sort_history can be empty, but it
+            # doesn't hurt to check
+            self.sorted_on = self.sort_history[0]
         if reset:
             self.beginResetModel(), self.endResetModel()
 
@@ -824,6 +831,10 @@ class BooksModel(QAbstractTableModel):  # {{{
 
         def renderer(field, decorator=False):
             idfunc = self.db.id
+            if field == 'id':
+                def func(idx):
+                    return idfunc(idx)
+                return func
             fffunc = self.db.new_api.fast_field_for
             field_obj = self.db.new_api.fields[field]
             m = field_obj.metadata.copy()
@@ -948,7 +959,7 @@ class BooksModel(QAbstractTableModel):  # {{{
 
             return func
 
-        self.dc = {f:renderer(f) for f in 'title authors size timestamp pubdate last_modified rating publisher tags series ondevice languages'.split()}
+        self.dc = {f:renderer(f) for f in self.orig_headers.keys()}
         self.dc_decorator = {f:renderer(f, True) for f in ('ondevice',)}
 
         for col in self.custom_columns:
@@ -1719,6 +1730,13 @@ class DeviceBooksModel(BooksModel):  # {{{
 
     def paths(self, rows):
         return [self.db[self.map[r.row()]].path for r in rows]
+
+    def id(self, row):
+        row = getattr(row, 'row', lambda:row)()
+        try:
+            return self.db[self.map[row]].path
+        except Exception:
+            return None
 
     def paths_for_db_ids(self, db_ids, as_map=False):
         res = defaultdict(list) if as_map else []

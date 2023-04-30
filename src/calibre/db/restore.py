@@ -8,6 +8,7 @@ __docformat__ = 'restructuredtext en'
 import os
 import re
 import shutil
+import sys
 import time
 import traceback
 from contextlib import suppress
@@ -17,6 +18,7 @@ from threading import Thread
 from calibre import force_unicode, isbytestring
 from calibre.constants import filesystem_encoding
 from calibre.db.backend import DB, DBPrefs
+from calibre.db.constants import METADATA_FILE_NAME, TRASH_DIR_NAME
 from calibre.db.cache import Cache
 from calibre.ebooks.metadata.opf2 import OPF
 from calibre.ptempfile import TemporaryDirectory
@@ -26,6 +28,26 @@ NON_EBOOK_EXTENSIONS = frozenset((
     'jpg', 'jpeg', 'gif', 'png', 'bmp',
     'opf', 'swp', 'swo'
 ))
+
+
+def read_opf(dirpath, read_annotations=True):
+    opf = os.path.join(dirpath, METADATA_FILE_NAME)
+    parsed_opf = OPF(opf, basedir=dirpath)
+    mi = parsed_opf.to_book_metadata()
+    annotations = tuple(parsed_opf.read_annotations()) if read_annotations else ()
+    timestamp = os.path.getmtime(opf)
+    return mi, timestamp, annotations
+
+
+def is_ebook_file(filename):
+    ext = os.path.splitext(filename)[1]
+    if not ext:
+        return False
+    ext = ext[1:].lower()
+    bad_ext_pat = re.compile(r'[^a-z0-9_]+')
+    if ext in NON_EBOOK_EXTENSIONS or bad_ext_pat.search(ext) is not None:
+        return False
+    return True
 
 
 class Restorer(Cache):
@@ -51,11 +73,9 @@ class Restore(Thread):
         self.src_library_path = os.path.abspath(library_path)
         self.progress_callback = progress_callback
         self.db_id_regexp = re.compile(r'^.* \((\d+)\)$')
-        self.bad_ext_pat = re.compile(r'[^a-z0-9_]+')
         if not callable(self.progress_callback):
             self.progress_callback = lambda x, y: x
         self.dirs = []
-        self.ignored_dirs = []
         self.failed_dirs = []
         self.books = []
         self.conflicting_custom_cols = {}
@@ -132,6 +152,13 @@ class Restore(Thread):
                 self.replace_db()
         except:
             self.tb = traceback.format_exc()
+            if self.failed_dirs:
+                for x in self.failed_dirs:
+                    for (dirpath, tb) in self.failed_dirs:
+                        self.tb += f'\n\n-------------\nFailed to restore: {dirpath}\n{tb}'
+            if self.failed_restores:
+                for (book, tb) in self.failed_restores:
+                    self.tb += f'\n\n-------------\nFailed to restore: {book["path"]}\n{tb}'
 
     def load_preferences(self):
         self.progress_callback(None, 1)
@@ -160,45 +187,45 @@ class Restore(Thread):
 
     def scan_library(self):
         for dirpath, dirnames, filenames in os.walk(self.src_library_path):
+            with suppress(ValueError):
+                dirnames.remove(TRASH_DIR_NAME)
             leaf = os.path.basename(dirpath)
             m = self.db_id_regexp.search(leaf)
-            if m is None or 'metadata.opf' not in filenames:
-                self.ignored_dirs.append(dirpath)
+            if m is None or METADATA_FILE_NAME not in filenames:
                 continue
-            self.dirs.append((dirpath, filenames, m.group(1)))
+            self.dirs.append((dirpath, list(dirnames), filenames, m.group(1)))
+            del dirnames[:]
 
         self.progress_callback(None, len(self.dirs))
-        for i, x in enumerate(self.dirs):
-            dirpath, filenames, book_id = x
+        for i, (dirpath, dirnames, filenames, book_id) in enumerate(self.dirs):
             try:
-                self.process_dir(dirpath, filenames, book_id)
-            except:
+                self.process_dir(dirpath, dirnames, filenames, book_id)
+            except Exception:
                 self.failed_dirs.append((dirpath, traceback.format_exc()))
+                traceback.print_exc()
             self.progress_callback(_('Processed') + ' ' + dirpath, i+1)
 
-    def is_ebook_file(self, filename):
-        ext = os.path.splitext(filename)[1]
-        if not ext:
-            return False
-        ext = ext[1:].lower()
-        if ext in NON_EBOOK_EXTENSIONS or \
-                self.bad_ext_pat.search(ext) is not None:
-            return False
-        return True
-
-    def process_dir(self, dirpath, filenames, book_id):
+    def process_dir(self, dirpath, dirnames, filenames, book_id):
         book_id = int(book_id)
-        formats = list(filter(self.is_ebook_file, filenames))
-        fmts    = [os.path.splitext(x)[1][1:].upper() for x in formats]
-        sizes   = [os.path.getsize(os.path.join(dirpath, x)) for x in formats]
-        names   = [os.path.splitext(x)[0] for x in formats]
-        opf = os.path.join(dirpath, 'metadata.opf')
-        parsed_opf = OPF(opf, basedir=dirpath)
-        mi = parsed_opf.to_book_metadata()
-        annotations = tuple(parsed_opf.read_annotations())
-        timestamp = os.path.getmtime(opf)
-        path = os.path.relpath(dirpath, self.src_library_path).replace(os.sep,
-                '/')
+        def safe_mtime(path):
+            with suppress(OSError):
+                return os.path.getmtime(path)
+            return sys.maxsize
+
+        filenames.sort(key=lambda f: safe_mtime(os.path.join(dirpath, f)))
+        fmt_map = {}
+        fmts, formats, sizes, names = [], [], [], []
+        for x in filenames:
+            if is_ebook_file(x):
+                fmt = os.path.splitext(x)[1][1:].upper()
+                if fmt and fmt_map.setdefault(fmt, x) is x:
+                    formats.append(x)
+                    sizes.append(os.path.getsize(os.path.join(dirpath, x)))
+                    names.append(os.path.splitext(x)[0])
+                    fmts.append(fmt)
+
+        mi, timestamp, annotations = read_opf(dirpath)
+        path = os.path.relpath(dirpath, self.src_library_path).replace(os.sep, '/')
 
         if int(mi.application_id) == book_id:
             self.books.append({
@@ -266,6 +293,7 @@ class Restore(Thread):
                 self.successes += 1
             except:
                 self.failed_restores.append((book, traceback.format_exc()))
+                traceback.print_exc()
             self.progress_callback(book['mi'].title, i+1)
 
         for field, lmap in self.link_maps.items():
