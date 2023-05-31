@@ -6,6 +6,9 @@ import unittest, functools, importlib, importlib.resources, os
 from calibre.utils.monotonic import monotonic
 
 
+is_ci = os.environ.get('CI', '').lower() == 'true'
+
+
 def no_endl(f):
     @functools.wraps(f)
     def func(*args, **kwargs):
@@ -53,7 +56,7 @@ class TestResult(unittest.TextTestResult):
 
 
 def find_tests_in_package(package, excludes=('main.py',)):
-    items = list(importlib.resources.contents(package))
+    items = [path.name for path in importlib.resources.files(package).iterdir()]
     suits = []
     excludes = set(excludes) | {x + 'c' for x in excludes}
     seen = set()
@@ -329,6 +332,6 @@ def run_cli(suite, verbosity=4, buffer=True):
     r = unittest.TextTestRunner
     r.resultclass = unittest.TextTestResult if verbosity < 2 else TestResult
     init_env()
-    result = r(verbosity=verbosity, buffer=buffer).run(suite)
+    result = r(verbosity=verbosity, buffer=buffer and not is_ci).run(suite)
     if not result.wasSuccessful():
         raise SystemExit(1)
