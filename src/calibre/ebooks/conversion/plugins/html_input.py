@@ -37,6 +37,7 @@ class HTMLInput(InputFormatPlugin):
     description = _('Convert HTML and OPF files to an OEB')
     file_types  = {'opf', 'html', 'htm', 'xhtml', 'xhtm', 'shtm', 'shtml'}
     commit_name = 'html_input'
+    root_dir_for_absolute_links = ''
 
     options = {
         OptionRecommendation(name='breadth_first',
@@ -131,6 +132,7 @@ class HTMLInput(InputFormatPlugin):
         )
         from calibre.ebooks.oeb.transforms.metadata import meta_info_to_oeb_metadata
         from calibre.utils.localization import canonicalize_lang
+        self.opts = opts
         css_parser.log.setLevel(logging.WARN)
         self.OEB_STYLES = OEB_STYLES
         oeb = create_oebbook(log, None, opts, self,
@@ -252,6 +254,9 @@ class HTMLInput(InputFormatPlugin):
             except:
                 self.log.warn('Failed to decode link %r. Ignoring'%link_)
                 return None, None
+        if self.root_dir_for_absolute_links and link_.startswith('/'):
+            link_ = link_.lstrip('/')
+            base = self.root_dir_for_absolute_links
         try:
             l = Link(link_, base if base else os.getcwd())
         except:
@@ -268,7 +273,8 @@ class HTMLInput(InputFormatPlugin):
         q = os.path.normcase(get_long_path_name(link))
         if not q.startswith(self.root_dir_of_input):
             if not self.opts.allow_local_files_outside_root:
-                self.log.warn('Not adding {} as it is outside the document root: {}'.format(q, self.root_dir_of_input))
+                if os.path.exists(q):
+                    self.log.warn('Not adding {} as it is outside the document root: {}'.format(q, self.root_dir_of_input))
                 return None, None
         return link, frag
 
