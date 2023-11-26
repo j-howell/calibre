@@ -11,7 +11,7 @@ import tempfile
 from functools import partial
 from urllib.parse import quote
 
-from calibre.constants import isbsd, islinux
+from calibre.constants import isbsd, islinux, filesystem_encoding
 from calibre.customize.conversion import InputFormatPlugin, OptionRecommendation
 from calibre.utils.filenames import ascii_filename, get_long_path_name
 from calibre.utils.imghdr import what
@@ -88,8 +88,11 @@ class HTMLInput(InputFormatPlugin):
 
         fname = None
         if hasattr(stream, 'name'):
-            basedir = os.path.dirname(stream.name)
-            fname = os.path.basename(stream.name)
+            sname = stream.name
+            if isinstance(sname, bytes):
+                sname = sname.decode(filesystem_encoding)
+            basedir = os.path.dirname(sname)
+            fname = os.path.basename(sname)
         self.set_root_dir_of_input(basedir)
 
         if file_ext != 'opf':
@@ -274,7 +277,7 @@ class HTMLInput(InputFormatPlugin):
         if not q.startswith(self.root_dir_of_input):
             if not self.opts.allow_local_files_outside_root:
                 if os.path.exists(q):
-                    self.log.warn('Not adding {} as it is outside the document root: {}'.format(q, self.root_dir_of_input))
+                    self.log.warn(f'Not adding {q} as it is outside the document root: {self.root_dir_of_input}')
                 return None, None
         return link, frag
 

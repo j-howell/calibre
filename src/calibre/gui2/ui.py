@@ -392,6 +392,10 @@ class Main(MainWindow, MainWindowMixin, DeviceMixin, EmailMixin,  # {{{
         if config['autolaunch_server']:
             self.start_content_server()
 
+        if self.system_tray_icon is not None and self.system_tray_icon.isVisible() and opts.start_in_tray:
+            QTimer.singleShot(0, self.hide_windows)
+            show_gui = False
+            setattr(self, '__systray_minimized', True)
         if show_gui:
             self.show()
         self.read_settings()
@@ -413,8 +417,6 @@ class Main(MainWindow, MainWindowMixin, DeviceMixin, EmailMixin,  # {{{
 
         register_keyboard_shortcuts()
         self.keyboard.finalize()
-        if self.system_tray_icon is not None and self.system_tray_icon.isVisible() and opts.start_in_tray:
-            self.hide_windows()
         self.auto_adder = AutoAdder(gprefs['auto_add_path'], self)
 
         self.listener = Listener(parent=self)
@@ -709,6 +711,52 @@ class Main(MainWindow, MainWindowMixin, DeviceMixin, EmailMixin,  # {{{
                 return
             details = self.iactions['Show Book Details']
             details.show_book_info(library_id=library_id, library_path=library_path, book_id=book_id)
+        elif action == 'show-note':
+            parts = tuple(filter(None, path.split('/')))
+            if len(parts) != 3:
+                return
+            library_id, field, itemx = parts
+            library_id = decode_library_id(library_id)
+            library_path = self.library_broker.path_for_library_id(library_id)
+            if library_path is None:
+                prints('Ignoring unknown library id', library_id, file=sys.stderr)
+                return
+            if field.startswith('_'):
+                field = '#' + field[1:]
+            item_id = item_val = None
+            if itemx.startswith('id_'):
+                try:
+                    item_id = int(itemx[3:])
+                except Exception:
+                    prints('Ignoring invalid item id', itemx, file=sys.stderr)
+                    return
+            elif itemx.startswith('hex_'):
+                try:
+                    item_val = bytes.fromhex(itemx[4:]).decode('utf-8')
+                except Exception:
+                    prints('Ignoring invalid item hexval', itemx, file=sys.stderr)
+                    return
+            elif itemx.startswith('val_'):
+                item_val = itemx[4:]
+            else:
+                prints('Ignoring invalid item hexval', itemx, file=sys.stderr)
+                return
+
+            def doit():
+                nonlocal item_id, item_val
+                db = self.current_db.new_api
+                if item_id is None:
+                    item_id = db.get_item_id(field, item_val)
+                    if item_id is None:
+                        prints('The item named:', item_val, 'was not found', file=sys.stderr)
+                        return
+                if db.notes_for(field, item_id):
+                    from calibre.gui2.dialogs.show_category_note import ShowNoteDialog
+                    ShowNoteDialog(field, item_id, db, parent=self).show()
+                else:
+                    prints(f'No notes available for {field}:{itemx}', file=sys.stderr)
+
+            self.perform_url_action(library_id, library_path, doit)
         elif action == 'show-book':
             parts = tuple(filter(None, path.split('/')))
             if len(parts) != 2:
