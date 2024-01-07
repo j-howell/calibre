@@ -32,7 +32,9 @@ from calibre.gui2.custom_column_widgets import get_field_list as em_get_field_li
 from calibre.gui2.dialogs.quickview import get_qv_field_list
 from calibre.gui2.dialogs.template_dialog import TemplateDialog
 from calibre.gui2.library.alternate_views import CM_TO_INCH, auto_height
-from calibre.gui2.preferences import ConfigWidgetBase, Setting, test_widget
+from calibre.gui2.preferences import (
+    ConfigWidgetBase, Setting, set_help_tips, test_widget,
+)
 from calibre.gui2.preferences.coloring import EditRules
 from calibre.gui2.preferences.look_feel_ui import Ui_Form
 from calibre.gui2.widgets import BusyCursor
@@ -577,13 +579,12 @@ class ConfigWidget(ConfigWidgetBase, Ui_Form):
         self.icon_theme_button.clicked.connect(self.choose_icon_theme)
         self.default_author_link = DefaultAuthorLink(self.default_author_link_container)
         self.default_author_link.changed_signal.connect(self.changed_signal)
-        r('gui_layout', config, restart_required=True, choices=[(_('Wide'), 'wide'), (_('Narrow'), 'narrow')])
         r('ui_style', gprefs, restart_required=True, choices=[(_('System default'), 'system'), (_('calibre style'), 'calibre')])
         r('color_palette', gprefs, restart_required=True, choices=[(_('System default'), 'system'), (_('Light'), 'light'), (_('Dark'), 'dark')])
         r('book_list_tooltips', gprefs)
         r('dnd_merge', gprefs)
         r('wrap_toolbar_text', gprefs, restart_required=True)
-        r('show_layout_buttons', gprefs, restart_required=True)
+        r('show_layout_buttons', gprefs)
         r('row_numbers_in_book_list', gprefs)
         r('tag_browser_old_look', gprefs)
         r('tag_browser_hide_empty_categories', gprefs)
@@ -646,6 +647,9 @@ class ConfigWidget(ConfigWidgetBase, Ui_Form):
         r('language', prefs, choices=choices, restart_required=True, setting=LanguageSetting)
 
         r('show_avg_rating', config)
+        r('show_links_in_tag_browser', gprefs)
+        r('show_notes_in_tag_browser', gprefs)
+        r('icons_on_right_in_tag_browser', gprefs)
         r('disable_animations', config)
         r('systray_icon', config, restart_required=True)
         r('show_splash_screen', gprefs)
@@ -828,6 +832,10 @@ class ConfigWidget(ConfigWidgetBase, Ui_Form):
         self.sections_view.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
         self.tabWidget.currentWidget().setFocus(Qt.FocusReason.OtherFocusReason)
         self.opt_ui_style.currentIndexChanged.connect(self.update_color_palette_state)
+        self.opt_gui_layout.addItem(_('Wide'), 'wide')
+        self.opt_gui_layout.addItem(_('Narrow'), 'narrow')
+        self.opt_gui_layout.currentIndexChanged.connect(self.changed_signal)
+        set_help_tips(self.opt_gui_layout, config.help('gui_layout'))
 
     def initial_tab_changed(self):
         self.sections_view.setCurrentRow(self.tabWidget.currentIndex())
@@ -1035,6 +1043,7 @@ class ConfigWidget(ConfigWidgetBase, Ui_Form):
         self.opt_book_details_css.blockSignals(False)
         self.tb_focus_label.setVisible(self.opt_tag_browser_allow_keyboard_focus.isChecked())
         self.update_color_palette_state()
+        self.opt_gui_layout.setCurrentIndex(0 if self.gui.layout_container.is_wide else 1)
 
     def open_cg_cache(self):
         open_local_file(self.gui.grid_view.thumbnail_cache.location)
@@ -1087,6 +1096,7 @@ class ConfigWidget(ConfigWidgetBase, Ui_Form):
         self.set_cg_color(gprefs.defaults['cover_grid_color'])
         self.set_cg_texture(gprefs.defaults['cover_grid_texture'])
         self.opt_book_details_css.setPlainText(P('templates/book_details.css', allow_user_override=False, data=True).decode('utf-8'))
+        self.opt_gui_layout.setCurrentIndex(0)
 
     def change_cover_grid_color(self):
         col = QColorDialog.getColor(self.cg_bg_widget.bcol,
@@ -1169,11 +1179,13 @@ class ConfigWidget(ConfigWidgetBase, Ui_Form):
             if defcss == bcss:
                 bcss = None
             set_data('templates/book_details.css', bcss)
+            self.gui.layout_container.change_layout(self.gui, self.opt_gui_layout.currentIndex() == 0)
 
         return rr
 
     def refresh_gui(self, gui):
         gui.book_details.book_info.refresh_css()
+        gui.place_layout_buttons()
         m = gui.library_view.model()
         m.update_db_prefs_cache()
         m.beginResetModel(), m.endResetModel()
