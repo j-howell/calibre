@@ -330,6 +330,7 @@ class CentralContainer(QWidget):
         self.narrow_desires = NarrowDesires()
         self.wide_is_visible = Visibility()
         self.narrow_is_visible = Visibility()
+        self._last_cb_position = self.gui = None
         super().__init__(parent)
         self.action_toggle_layout = QAction(self)
         self.action_toggle_layout.triggered.connect(self.toggle_layout)
@@ -367,10 +368,17 @@ class CentralContainer(QWidget):
 
     @property
     def narrow_cb_on_top(self):
-        from calibre.gui2.ui import get_gui
-        gui = get_gui()
-        ratio = self.width() / self.height() if gui is None else gui.width() / gui.height()
-        return ratio <= 1.4
+        p = self._last_cb_position = gprefs['cover_browser_narrow_view_position']
+        if p == 'automatic':
+            gui = self.gui or self
+            ratio = gui.width() / gui.height()
+            return ratio <= 1.4
+        return p == 'on_top'
+
+    @property
+    def cb_on_top_changed(self):
+        return (self._last_cb_position is None or
+                gprefs['cover_browser_narrow_view_position'] != self._last_cb_position)
 
     @property
     def is_visible(self):
@@ -384,6 +392,7 @@ class CentralContainer(QWidget):
         w.setParent(self)
 
     def initialize_with_gui(self, gui, book_list_widget):
+        self.gui = gui
         self.tag_browser_button.initialize_with_gui(gui)
         self.book_details_button.initialize_with_gui(gui)
         self.cover_browser_button.initialize_with_gui(gui)
@@ -404,7 +413,7 @@ class CentralContainer(QWidget):
 
     def change_layout(self, gui, is_wide):
         layout = Layout.wide if is_wide else Layout.narrow
-        if layout is self.layout:
+        if layout is self.layout and not self.cb_on_top_changed:
             return False
         ss = self.serialized_settings()
         before = ss[self.layout.name + '_visibility']
@@ -583,10 +592,8 @@ class CentralContainer(QWidget):
         self.update()
 
     def toggle_layout(self):
-        from calibre.gui2.ui import get_gui
-        gui = get_gui()
-        if gui:
-            self.change_layout(gui, self.layout is Layout.narrow)
+        if self.gui:
+            self.change_layout(self.gui, self.layout is Layout.narrow)
         else:
             self.layout = Layout.narrow if self.layout is Layout.wide else Layout.wide
             self.relayout()

@@ -610,6 +610,10 @@ class ConfigWidget(ConfigWidgetBase, Ui_Form):
 
         r('cover_flow_queue_length', config, restart_required=True)
         r('cover_browser_reflections', gprefs)
+        r('cover_browser_narrow_view_position', gprefs,
+                            choices=[(_('Automatic'), 'automatic'), # Automatic must be first
+                                     (_('On top'), 'on_top'),
+                                     (_('On right'), 'on_right')])
         r('cover_browser_title_template', db.prefs)
         fm = db.field_metadata
         r('cover_browser_subtitle_field', db.prefs, choices=[(_('No subtitle'), 'none')] + sorted(
@@ -1044,6 +1048,12 @@ class ConfigWidget(ConfigWidgetBase, Ui_Form):
         self.tb_focus_label.setVisible(self.opt_tag_browser_allow_keyboard_focus.isChecked())
         self.update_color_palette_state()
         self.opt_gui_layout.setCurrentIndex(0 if self.gui.layout_container.is_wide else 1)
+        set_help_tips(self.opt_cover_browser_narrow_view_position, _(
+            'This option controls the position of the cover browser when using the Narrow user '
+            'interface layout.  "Automatic" will place the cover browser on top or on the right '
+            'of the book list depending on the aspect ratio of the calibre window. "On top" '
+            'places it over the book list, and "On right" places it to the right of the book '
+            'list. This option has no effect when using the Wide user interface layout.'))
 
     def open_cg_cache(self):
         open_local_file(self.gui.grid_view.thumbnail_cache.location)
