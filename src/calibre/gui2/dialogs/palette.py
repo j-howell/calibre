@@ -2,6 +2,7 @@
 # License: GPLv3 Copyright: 2024, Kovid Goyal <kovid at kovidgoyal.net>
 
 
+import json
 import textwrap
 from contextlib import suppress
 from qt.core import (
@@ -9,9 +10,10 @@ from qt.core import (
     QScrollArea, QSize, QSizePolicy, QTabWidget, QVBoxLayout, QWidget, pyqtSignal,
 )
 
-from calibre.gui2 import Application, gprefs
+from calibre.gui2 import Application, choose_files, choose_save_file, gprefs
 from calibre.gui2.palette import (
-    default_dark_palette, default_light_palette, palette_colors, palette_from_dict,
+    default_dark_palette, default_light_palette, is_foreground_color, palette_colors,
+    palette_from_dict,
 )
 from calibre.gui2.widgets2 import ColorButton, Dialog
 
@@ -54,6 +56,13 @@ class Color(QWidget):
         if ans != self.default_palette.color(*self.color_key):
             return ans
 
+    @value.setter
+    def value(self, val):
+        if val is None:
+            self.restore_defaults()
+        else:
+            self.button.color = val
+
 
 class PaletteColors(QWidget):
 
@@ -66,7 +75,7 @@ class PaletteColors(QWidget):
         self.default_palette = default_palette
 
         for key, desc in palette_colors().items():
-            if 'Text' in key:
+            if is_foreground_color(key):
                 self.foreground_colors[key] = desc
             elif 'Link' in key:
                 self.link_colors[key] = desc
@@ -83,8 +92,8 @@ class PaletteColors(QWidget):
             ans.setFont(f)
             return ans
 
-        def c(x, desc):
-            w = Color(x, desc, self, palette, default_palette, mode_name)
+        def c(x, desc, group=''):
+            w = Color(x, desc, self, palette, default_palette, mode_name, group=group)
             l.addWidget(w)
             self.colors.append(w)
 
@@ -98,7 +107,7 @@ class PaletteColors(QWidget):
 
         l.addWidget(header(_('Foreground (text) colors when disabled')))
         for x, desc in self.foreground_colors.items():
-            c(x, desc)
+            c(x, desc, group='disabled')
 
         l.addWidget(header(_('Link colors')))
         for x, desc in self.link_colors.items():
@@ -116,6 +125,11 @@ class PaletteColors(QWidget):
             if v is not None:
                 ans[w.setting_key] = w.value
         return ans
+
+    @value.setter
+    def value(self, serialized):
+        for w in self.colors:
+            w.value = serialized.get(w.setting_key)
 
     def restore_defaults(self):
         for w in self.colors:
@@ -156,8 +170,9 @@ class PaletteWidget(QWidget):
 
     def import_system_colors(self):
         import subprocess
-        from calibre.startup import get_debug_executable
+
         from calibre.gui2.palette import unserialize_palette
+        from calibre.startup import get_debug_executable
         raw = subprocess.check_output(get_debug_executable() + [
             '--command', 'from qt.core import QApplication; from calibre.gui2.palette import *; app = QApplication([]);'
             'import sys; sys.stdout.buffer.write(serialize_palette(app.palette()))'])
@@ -173,6 +188,9 @@ class PaletteWidget(QWidget):
         for w in (self.palette_colors, self.import_system_button):
             w.setEnabled(enabled)
 
+    def serialized_colors(self):
+        return self.palette_colors.value
+
     def apply_settings(self):
         val = self.palette_colors.value
         v = gprefs[f'{self.mode_name}_palettes']
@@ -183,6 +201,13 @@ class PaletteWidget(QWidget):
     def restore_defaults(self):
         self.use_custom.setChecked(False)
         self.palette_colors.restore_defaults()
+
+    def serialize(self):
+        return {'use_custom': self.use_custom.isChecked(), 'palette': self.palette_colors.value}
+
+    def unserialize(self, val):
+        self.use_custom.setChecked(bool(val['use_custom']))
+        self.palette_colors.value = val['palette']
 
 
 class PaletteConfig(Dialog):
@@ -224,8 +249,34 @@ class PaletteConfig(Dialog):
         h = QHBoxLayout()
         self.rd = b = QPushButton(QIcon.ic('clear_left.png'), _('Restore &defaults'))
         b.clicked.connect(self.restore_defaults)
-        h.addWidget(b), h.addStretch(10), h.addWidget(self.bb)
+        h.addWidget(b)
+        self.ib = b = QPushButton(QIcon(), _('&Import'))
+        b.clicked.connect(self.import_colors)
+        b.setToolTip(_('Import previously exported color scheme from a file'))
+        h.addWidget(b)
+        self.ib = b = QPushButton(QIcon(), _('E&xport'))
+        b.clicked.connect(self.export_colors)
+        b.setToolTip(_('Export current colors as a file'))
+        h.addWidget(b)
+        h.addStretch(10), h.addWidget(self.bb)
         l.addLayout(h)
+
+    def import_colors(self):
+        files = choose_files(self, 'import-calibre-palette', _('Choose file to import from'),
+                         filters=[(_('calibre Palette'), ['calibre-palette'])], all_files=False, select_only_single_file=True)
+        if files:
+            with open(files[0], 'rb') as f:
+                data = json.loads(f.read())
+            self.dark_tab.unserialize(data['dark'])
+            self.light_tab.unserialize(data['light'])
+
+    def export_colors(self):
+        data = {'dark': self.dark_tab.serialize(), 'light': self.light_tab.serialize()}
+        dest = choose_save_file(self, 'export-calibre-palette', _('Choose file to export to'),
+                         filters=[(_('calibre Palette'), ['calibre-palette'])], all_files=False, initial_filename='mycolors.calibre-palette')
+        if dest:
+            with open(dest, 'wb') as f:
+                f.write(json.dumps(data, indent=2, sort_keys=True).encode('utf-8'))
 
     def apply_settings(self):
         with gprefs:
