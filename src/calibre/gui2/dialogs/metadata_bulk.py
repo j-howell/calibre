@@ -16,6 +16,7 @@ from qt.core import (
     QDialogButtonBox,
     QFont,
     QGridLayout,
+    QIcon,
     QInputDialog,
     QLabel,
     QLineEdit,
@@ -557,7 +558,7 @@ class MetadataBulkDialog(QDialog, Ui_MetadataBulkDialog):
                             _('Append to field'),
                         ]
 
-    def __init__(self, window, rows, model, tab, refresh_books):
+    def __init__(self, window, rows, model, starting_tab, refresh_books):
         QDialog.__init__(self, window)
         self.setupUi(self)
         setup_status_actions(self.test_result)
@@ -633,8 +634,7 @@ class MetadataBulkDialog(QDialog, Ui_MetadataBulkDialog):
             'This operation cannot be canceled or undone'))
         self.do_again = False
         self.restore_geometry(gprefs, 'bulk_metadata_window_geometry')
-        ct = gprefs.get('bulk_metadata_window_tab', 0)
-        self.central_widget.setCurrentIndex(ct)
+
         self.languages.init_langs(self.db)
         self.languages.setEditText('')
         self.authors.setFocus(Qt.FocusReason.OtherFocusReason)
@@ -644,8 +644,14 @@ class MetadataBulkDialog(QDialog, Ui_MetadataBulkDialog):
         self.button_transform_authors.clicked.connect(self.transform_authors)
         self.button_transform_publishers.clicked.connect(self.transform_publishers)
         self.tag_map_rules = self.author_map_rules = self.publisher_map_rules = ()
+        tuple(map(lambda b: (b.clicked.connect(self.clear_transform_rules_for), b.setIcon(QIcon.ic('clear_left.png')), b.setToolTip(_(
+            'Clear the rules'))),
+            (self.button_clear_tags_rules, self.button_clear_authors_rules, self.button_clear_publishers_rules)
+        ))
         self.update_transform_labels()
-        self.central_widget.setCurrentIndex(tab)
+        if starting_tab < 0:
+            starting_tab = gprefs.get('bulk_metadata_window_tab', 0)
+        self.central_widget.setCurrentIndex(starting_tab)
         self.exec()
 
     def update_transform_labels(self):
@@ -657,6 +663,19 @@ class MetadataBulkDialog(QDialog, Ui_MetadataBulkDialog):
         f(self.label_transform_tags, len(self.tag_map_rules))
         f(self.label_transform_authors, len(self.author_map_rules))
         f(self.label_transform_publishers, len(self.publisher_map_rules))
+        self.button_clear_tags_rules.setVisible(bool(self.tag_map_rules))
+        self.button_clear_authors_rules.setVisible(bool(self.author_map_rules))
+        self.button_clear_publishers_rules.setVisible(bool(self.publisher_map_rules))
+
+    def clear_transform_rules_for(self):
+        n = self.sender().objectName()
+        if 'tags' in n:
+            self.tag_map_rules = ()
+        elif 'authors' in n:
+            self.author_map_rules = ()
+        elif 'publisher' in n:
+            self.publisher_map_rules = ()
+        self.update_transform_labels()
 
     def _change_transform_rules(self, RulesDialog, which):
         d = RulesDialog(self)
