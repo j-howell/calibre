@@ -951,6 +951,9 @@ def set_user_metadata(root, prefixes, refines, val):
         nval = {}
         for name, fm in val.items():
             fm = fm.copy()
+            if (fm.get('datatype', 'text') == 'composite' and
+                not fm.get('display', {}).get('composite_store_template_value_in_opf', True)):
+                    fm['#value#'] = ''
             encode_is_multiple(fm)
             nval[name] = fm
         set_user_metadata3(root, prefixes, refines, nval)
@@ -1115,7 +1118,8 @@ def apply_metadata(root, mi, cover_prefix='', cover_data=None, apply_null=False,
     if ok('rating') and mi.rating is not None and float(mi.rating) > 0.1:
         set_rating(root, prefixes, refines, mi.rating)
     if ok('series'):
-        set_series(root, prefixes, refines, mi.series, mi.series_index or 1)
+        sidx = mi.series_index if isinstance(mi.series_index, (int, float)) else 1.0
+        set_series(root, prefixes, refines, mi.series, sidx)
     if ok('link_maps'):
         set_link_maps(root, prefixes, refines, getattr(mi, 'link_maps', None))
     if ok('user_categories'):

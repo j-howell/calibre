@@ -7,12 +7,13 @@ from collections import defaultdict
 from datetime import datetime, timedelta
 from urllib.parse import quote, urlencode
 
+from html5_parser import parse
+from lxml import etree
+
 from calibre import replace_entities
 from calibre.ebooks.BeautifulSoup import NavigableString, Tag
 from calibre.ptempfile import PersistentTemporaryFile
 from calibre.web.feeds.news import BasicNewsRecipe
-from html5_parser import parse
-from lxml import etree
 
 use_archive = True
 
@@ -194,7 +195,15 @@ class Economist(BasicNewsRecipe):
     remove_attributes = ['data-reactid', 'width', 'height']
     # economist.com has started throttling after about 60% of the total has
     # downloaded with connection reset by peer (104) errors.
-    delay = 1
+    delay = 2
+
+    recipe_specific_options = {
+        'res': {
+            'short': 'For hi-res images, select a resolution from the\nfollowing options: 834, 960, 1096, 1280, 1424',
+            'long': 'This is useful for non e-ink devices, and for a lower file size\nthan the default, use from 480, 384, 360, 256.',
+            'default': '600'
+        }
+    }
 
     needs_subscription = False
 
@@ -268,9 +277,13 @@ class Economist(BasicNewsRecipe):
             article.url = soup.find('h1')['title']
 
         def preprocess_html(self, soup):
+            width = '600'
+            w = self.recipe_specific_options.get('res')
+            if w and isinstance(w, str):
+                width =  w
             for img in soup.findAll('img', src=True):
-                img['src'] = img['src'].replace('economist.com/',
-                    'economist.com/cdn-cgi/image/width=600,quality=80,format=auto/')
+                qua = 'economist.com/cdn-cgi/image/width=' + width + ',quality=80,format=auto/'
+                img['src'] = img['src'].replace('economist.com/', qua)
             return soup
 
     else: # Load articles from individual article pages {{{

@@ -9,92 +9,173 @@ from xml.sax.saxutils import escape, quoteattr
 
 from calibre.utils.iso8601 import parse_iso8601
 
-module_version = 5  # needed for live updates
+module_version = 8  # needed for live updates
 pprint
 
 
-def is_heading(tn):
-    return tn in ('Heading1Block', 'Heading2Block', 'Heading3Block', 'Heading4Block')
+def parse_image(i):
+    crop = i.get('crops') or i.get('spanImageCrops')
+    if crop:
+        yield f'<div><img src="{crop[0]["renditions"][0]["url"]}" title="{i.get("altText", "")}">'
+    if i.get('caption'):
+        yield f'<div class="cap">{"".join(parse_types(i["caption"]))}'
+        if i.get('credit'):
+            yield f'<span class="cred"> {i["credit"]}</span>'
+        yield '</div>'
+    elif i.get('legacyHtmlCaption'):
+        if i['legacyHtmlCaption'].strip():
+            yield f'<div class="cap">{i["legacyHtmlCaption"]}</div>'
+    yield '</div>'
 
+def parse_img_grid(g):
+    for grd in g.get('gridMedia', {}):
+        yield ''.join(parse_image(grd))
+    if g.get('caption'):
+        yield f'<div class="cap">{g["caption"]}'
+        if g.get('credit'):
+            yield f'<span class="cred"> {g["credit"]}</span>'
+        yield '</div>'
 
-def process_inline_text(lines, block):
-    text = ''
-    if 'text@stripHtml' in block:
-        text = escape(block['text@stripHtml'])
-    elif 'renderedRepresentation' in block:  # happens in byline blocks
-        text = block['renderedRepresentation']
-    elif 'text' in block:
-        text = block['text']
-    if text:
-        for fmt in block.get('formats', ()):
-            tn = fmt['__typename']
-            if tn == 'LinkFormat':
-                ab = fmt
-                text = '<a href="{}" title="{}">{}</a>'.format(ab['url'], ab.get('title') or '', text)
-            elif tn == 'BoldFormat':
-                text = '<b>' + text + '</b>'
-        lines.append(text)
+def parse_vid(v):
+    if v.get('promotionalMedia'):
+        headline = v.get("headline", {}).get("default", "")
+        rendition = v.get('renditions')
+        yield (f'<div><b><a href="{rendition[0]["url"]}">Video</a>: {headline}</b></div>'
+            if rendition else f'<div><b>{headline}</b></div>')
+        yield ''.join(parse_types(v["promotionalMedia"]))
+        if v.get('promotionalSummary'):
+            yield f'<div class="cap">{v["promotionalSummary"]}</div>'
 
+def parse_emb(e):
+    if e.get('html') and 'datawrapper.dwcdn.net' in e.get('html', ''):
+        dw = re.search(r'datawrapper.dwcdn.net/(.{5})', e['html']).group(1)
+        yield f'<div><img src="https://datawrapper.dwcdn.net/{dw}/full.png"></div>'
+    elif e.get('promotionalMedia'):
+        if e.get('headline'):
+            yield f'<div><b>{e["headline"]["default"]}</b></div>'
+        yield ''.join(parse_types(e["promotionalMedia"]))
+        if e.get('note'):
+            yield f'<div class="cap">{e["note"]}</div>'
 
-def process_paragraph(lines, block, content_key='content'):
-    tn = block['__typename']
-    m = re.match(r'Heading([1-6])Block', tn)
-    if m is not None:
-        tag = 'h' + m.group(1)
-    else:
-        tag = 'p'
-    ta = block.get('textAlign') or 'LEFT'
-    style = f'text-align: {ta.lower()}'
-    lines.append(f'<{tag} style="{style}">')
-    for item in block[content_key]:
-        tn = item['__typename']
-        if tn in ('TextInline', 'Byline'):
-            process_inline_text(lines, item)
-    lines.append('</' + tag + '>')
+def parse_byline(byl):
+    for b in byl.get('bylines', {}):
+        yield f'<div>{b["renderedRepresentation"]}</div>'
+    yield '<div><b><i>'
+    for rl in byl.get('role', {}):
+        if ''.join(parse_cnt(rl)).strip():
+            yield ''.join(parse_cnt(rl))
+    yield '</i></b></div>'
 
+def iso_date(x):
+    dt = parse_iso8601(x, as_utc=False)
+    return dt.strftime('%b %d, %Y at %I:%M %p')
 
-def process_timestamp(lines, block):
-    ts = block['timestamp']
-    dt = parse_iso8601(ts, as_utc=False)
-    lines.append('<p class="timestamp">' + escape(dt.strftime('%b %d, %Y')) + '</p>')
+def parse_header(h):
+    if h.get('label'):
+        yield f'<div class="lbl">{"".join(parse_types(h["label"]))}</div>'
+    if h.get('headline'):
+        yield ''.join(parse_types(h["headline"]))
+    if h.get('summary'):
+        yield f'<p><i>{"".join(parse_types(h["summary"]))}</i></p>'
+    if h.get('ledeMedia'):
+        yield ''.join(parse_types(h["ledeMedia"]))
+    if h.get('byline'):
+        yield ''.join(parse_types(h["byline"]))
+    if h.get('timestampBlock'):
+        yield ''.join(parse_types(h["timestampBlock"]))
 
+def parse_fmt_type(fm):
+    for f in fm.get('formats', {}):
+        ftype = f.get("__typename", "")
+        if ftype == "BoldFormat":
+            yield '<strong>'
+        if ftype == "ItalicFormat":
+            yield '<em>'
+        if ftype == "LinkFormat":
+            hrf = f["url"]
+            yield f'<a href="{hrf}">'
+    yield fm.get("text", "")
+    for f in reversed(fm.get('formats', {})):
+        ftype = f.get("__typename", "")
+        if ftype == "BoldFormat":
+            yield '</strong>'
+        if ftype == "ItalicFormat":
+            yield '</em>'
+        if ftype == "LinkFormat":
+            yield '</a>'
 
-def process_header(lines, block):
-    label = block.get('label')
-    if label:
-        process_paragraph(lines, label)
-    headline = block.get('headline')
-    if headline:
-        process_paragraph(lines, headline)
-    summary = block.get('summary')
-    if summary:
-        process_paragraph(lines, summary)
-    lm = block.get('ledeMedia')
-    if lm and lm.get('__typename') == 'ImageBlock':
-        process_image_block(lines, lm)
-    byline = block.get('byline')
-    if byline:
-        process_paragraph(lines, byline, content_key='bylines')
-    timestamp = block.get('timestampBlock')
-    if timestamp:
-        process_timestamp(lines, timestamp)
+def parse_cnt(cnt):
+    for k in cnt:
+        if isinstance(cnt[k], list):
+            if k == 'formats':
+                yield ''.join(parse_fmt_type(cnt))
+            else:
+                for cnt_ in cnt[k]:
+                    yield ''.join(parse_types(cnt_))
+        if isinstance(cnt[k], dict):
+            yield ''.join(parse_types(cnt[k]))
+    if cnt.get('text') and 'formats' not in cnt and 'content' not in cnt:
+        if isinstance(cnt['text'], str):
+            yield cnt['text']
 
+def parse_types(x):
+    typename = x.get('__typename', '')
 
-def process_image_block(lines, block):
-    media = block['media']
-    caption = media.get('caption')
-    caption_lines = []
-    if caption:
-        process_inline_text(caption_lines, caption)
-    crops = media['crops']
-    renditions = crops[0]['renditions']
-    img = renditions[0]['url']
-    if 'web.archive.org' in img:
-        img = img.partition('/')[-1]
-        img = img[img.find('https://'):]
-    lines.append(f'<div style="text-align: center"><div style="text-align: center"><img src={quoteattr(img)}/></div><div style="font-size: smaller">')
-    lines.extend(caption_lines)
-    lines.append('</div></div>')
+    if 'Header' in typename:
+        yield '\n'.join(parse_header(x))
+
+    elif typename.startswith('Heading'):
+        htag = 'h' + re.match(r'Heading([1-6])Block', typename).group(1)
+        yield f'<{htag}>{"".join(parse_cnt(x))}</{htag}>'
+
+    elif typename == 'ParagraphBlock':
+        yield f'<p>{"".join(parse_cnt(x))}</p>'
+
+    elif typename == 'BylineBlock':
+        yield f'<div class="byl"><br/>{"".join(parse_byline(x))}</div>'
+    elif typename == 'LabelBlock':
+        yield f'<div class="sc">{"".join(parse_cnt(x))}</div>'
+    elif typename == 'BlockquoteBlock':
+        yield f'<blockquote>{"".join(parse_cnt(x))}</blockquote>'
+    elif typename == 'TimestampBlock':
+        yield f'<div class="time">{iso_date(x["timestamp"])}</div>'
+    elif typename == 'LineBreakInline':
+        yield '<br/>'
+    elif typename == 'RuleBlock':
+        yield '<hr/>'
+
+    elif typename == 'Image':
+        yield "".join(parse_image(x))
+
+    elif typename == 'GridBlock':
+        yield "".join(parse_img_grid(x))
+
+    elif typename == 'Video':
+        yield "".join(parse_vid(x))
+
+    elif typename == 'EmbeddedInteractive':
+        yield "".join(parse_emb(x))
+
+    elif typename == 'ListBlock':
+        yield f'<ul>{"".join(parse_cnt(x))}</ul>'
+    elif typename == 'ListItemBlock':
+        yield f'\n<li>{"".join(parse_cnt(x))}</li>'
+
+    elif typename == 'TextInline':
+        yield "".join(parse_cnt(x))
+
+    elif typename in {'DetailBlock', 'TextRunKV'}:
+        yield f'<p><i>{"".join(parse_cnt(x))}</i></p>'
+
+    elif typename and typename not in {'RelatedLinksBlock', 'Dropzone'}:
+        if "".join(parse_cnt(x)).strip():
+            yield "".join(parse_cnt(x))
+
+def article_parse(data):
+    yield "<html><body>"
+    for d in data:
+        yield from parse_types(d)
+    yield "</body></html>"
 
 
 def json_to_html(raw):
@@ -105,18 +186,8 @@ def json_to_html(raw):
     except TypeError:
         data = data['initialState']
         return live_json_to_html(data)
-    article = next(iter(data.values()))
-    body = article['sprinkledBody']['content']
-    lines = []
-    for item in body:
-        tn = item['__typename']
-        if tn in ('HeaderBasicBlock', 'HeaderLegacyBlock', 'HeaderFullBleedVerticalBlock'):
-            process_header(lines, item)
-        elif tn in ('ParagraphBlock', 'LabelBlock', 'DetailBlock') or is_heading(tn):
-            process_paragraph(lines, item)
-        elif tn == 'ImageBlock':
-            process_image_block(lines, item)
-    return '<html><body>' + '\n'.join(lines) + '</body></html>'
+    content = data['article']['sprinkledBody']['content']
+    return '\n'.join(article_parse(content))
 
 
 def add_live_item(item, item_type, lines):
